@@ -26,11 +26,11 @@ class BookingController extends Controller
             ], 422);
         }
         $startTime = Carbon::parse($request->start_time);
-        $endTime = $startTime->addMinutes($room->duration_minutes);
+        $endTime = $startTime->copy()->addMinutes($room->duration_minutes);
         $isConflict = Booking::where('room_id', $room->id)
             ->where('status', '!=', 'cancelled')
-            ->where('start_time', '<', $startTime)
-            ->where('end_time', '>', $endTime)
+            ->where('start_time', '<', $endTime)
+            ->where('end_time', '>', $startTime)
             ->exists();
         if($isConflict) {
             return response()->json([
@@ -43,7 +43,7 @@ class BookingController extends Controller
             $price = $room->weekday_price;
         }
         $booking = Booking::create([
-            'user_id' => $request->user_id,
+            'user_id' => auth()->id(),
             'room_id' => $room->id,
             'start_time' => $startTime,
             'end_time' => $endTime,
