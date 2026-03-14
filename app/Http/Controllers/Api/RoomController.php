@@ -10,13 +10,41 @@ use Illuminate\Http\Request;
 
 class RoomController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $rooms = Room::withAvg(['reviews' => function ($query) {
-            $query->where('is_approved', true);
-        }], 'rating')->withCount(['reviews' => function ($query) {
-            $query->where('is_approved', true);
-        }])->get();
+        $query = Room::withAvg(['reviews' => function ($q) {
+            $q->where('is_approved', true);
+        }], 'rating')->withCount(['reviews' => function ($q) {
+            $q->where('is_approved', true);
+        }]);
+        if($request->has('difficulty')){
+            $query->where('difficulty', $request->difficulty);
+        }
+        if($request->has('players_count')){
+            $query->where('min_players', '<=', $request->players_count)->where('max_players', '>=', $request->players_count);
+        }
+        if($request->has('search')){
+            $query->where('name', 'like', '%'.$request->search.'%');
+        }
+        if($request->has('sort')){
+            switch ($request->sort) {
+                case 'rating_desc':
+                    $query->orderBy('reviews_avg_rating', 'desc');
+                    break;
+                case 'rating_asc':
+                    $query->orderBy('reviews_avg_rating', 'asc');
+                    break;
+                case 'difficulty_asc':
+                    $query->orderByRaw("FIELD(difficulty, 'easy', 'medium', 'hard', 'ultra hard') ASC");
+                    break;
+                case 'difficulty_desc':
+                    $query->orderByRaw("FIELD(difficulty, 'easy', 'medium', 'hard', 'ultra hard') DESC");
+                    break;
+            }
+        }else{
+            $query->latest();
+        }
+        $rooms = $query->paginate(10);
         return response()->json($rooms);
     }
 
