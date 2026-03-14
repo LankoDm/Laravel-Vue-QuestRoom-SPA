@@ -15,7 +15,7 @@ class CheckAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if($request->user() && ($request->user()->isAdmin())) {
+        if($request->user() && ($request->user()->isAdmin() || $request->user()->isManager())) {
             return $next($request);
         }
         return response()->json([

@@ -37,6 +37,6 @@ class RoomController extends Controller
     public function destroy(string $id)
     {
         Room::findOrFail($id)->delete();
-        return response()->json(["message" => "Room deleted successfully."]);
+        return response()->json(["message" => "Кімнату успішно видалено."]);
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/rooms', [RoomController::class, 'index']);
 Route::get('/rooms/{room}', [RoomController::class, 'show']);
+Route::get('/rooms/{room}/reviews', [ReviewController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -20,10 +22,13 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
     Route::apiResource('/bookings', BookingController::class);
+    Route::post('/reviews', [ReviewController::class, 'store']);
     Route::middleware([CheckAdmin::class])->group(function () {
         Route::post('/rooms', [RoomController::class, 'store']);
         Route::put('/rooms/{room}', [RoomController::class, 'update']);
         Route::delete('/rooms/{room}', [RoomController::class, 'destroy']);
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
+        Route::patch('/reviews/{review}/approve', [ReviewController::class, 'approve']);
+        Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
     });
 });
