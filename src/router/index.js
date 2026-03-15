@@ -3,6 +3,7 @@ import PublicLayout from "../layouts/PublicLayout.vue";
 import HomeView from "../views/Public/HomeView.vue";
 import RoomView from "../views/Public/RoomView.vue";
 import LoginView from "@/views/Public/LoginView.vue";
+import RegisterView from "@/views/Public/RegisterView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +26,11 @@ const router = createRouter({
           path: 'login',
           name: 'login',
           component: LoginView
+        },
+        {
+          path: 'register',
+          name: 'register',
+          component: RegisterView
         }
       ]
     },

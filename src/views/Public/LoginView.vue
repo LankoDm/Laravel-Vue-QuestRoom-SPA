@@ -72,7 +72,7 @@ const handleLogin = async () => {
 
       <div class="mt-8 text-center text-sm text-gray-500">
         Ще немає акаунту?
-        <a href="#" class="text-primary font-bold hover:underline">Зареєструватися</a>
+        <RouterLink :to="{ name: 'register' }" class="text-primary font-bold hover:underline">Зареєструватися</RouterLink>
       </div>
 
     </div>

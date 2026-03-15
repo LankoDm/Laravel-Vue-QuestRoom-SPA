@@ -25,6 +25,19 @@ export const useAuthStore = defineStore('auth', () => {
             delete axios.defaults.headers.common['Authorization'];
         }
     };
+    const register = async (userData) => {
+        try {
+            const response = await axios.post('http://localhost:8080/api/register', userData);
+            token.value = response.data.token;
+            user.value = response.data.user;
+            localStorage.setItem('token', token.value);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
+            return true;
+        } catch (error) {
+            console.error('Помилка реєстрації:', error);
+            throw error;
+        }
+    };
     const login = async (credentials) => {
         try {
             const response = await axios.post('http://localhost:8080/api/login', credentials);
@@ -56,5 +69,5 @@ export const useAuthStore = defineStore('auth', () => {
             router.push({ name: 'login' });
         }
     };
-    return { user, token, isAuthenticated, isAdmin, isManager, fetchUser, login, logout };
+    return { user, token, isAuthenticated, isAdmin, isManager, fetchUser, login, logout, register };
 });
