@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import PublicLayout from '../layouts/PublicLayout.vue';
-import HomeView from '../views/Public/HomeView.vue';
+import PublicLayout from "../layouts/PublicLayout.vue";
+import HomeView from "../views/Public/HomeView.vue";
+import RoomView from "../views/Public/RoomView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,6 +15,11 @@ const router = createRouter({
           name: 'home',
           component: HomeView
         },
+        {
+          path: 'rooms/:id',
+          name: 'room.show',
+          component: RoomView
+        }
       ]
     },
     // {

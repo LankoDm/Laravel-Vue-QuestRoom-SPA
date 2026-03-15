@@ -1,9 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
 
 const rooms = ref([]);
 const isLoading = ref(true);
+const router = useRouter();
 const fetchRooms = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/rooms');
@@ -15,7 +17,7 @@ const fetchRooms = async () => {
   }
 };
 const openRoom = (id) => {
-  console.log(`Перехід на сторінку з ID: ${id}`);
+  router.push({ name: 'room.show', params: { id: id } });
 };
 
 onMounted(() => {
