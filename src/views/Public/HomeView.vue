@@ -24,7 +24,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background p-8">
+  <div class="py-10 px-6">
     <div class="max-w-6xl mx-auto">
 
       <h1 class="text-4xl font-bold text-primary mb-8 text-center">
@@ -46,8 +46,7 @@ onMounted(() => {
                 v-if="room.image_path"
                 :src="room.image_path"
                 :alt="room.name"
-                class="w-full h-full object-cover"
-            />
+                class="w-full h-full object-cover"/>
             <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
               Немає зображення
             </div>
