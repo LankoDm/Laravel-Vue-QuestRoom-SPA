@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/bookings', BookingController::class);
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::middleware([CheckAdmin::class])->group(function () {
+        Route::patch('/rooms/{room}/toggle-status', [RoomController::class, 'toggleStatus']);
         Route::post('/rooms', [RoomController::class, 'store']);
         Route::put('/rooms/{room}', [RoomController::class, 'update']);
         Route::delete('/rooms/{room}', [RoomController::class, 'destroy']);

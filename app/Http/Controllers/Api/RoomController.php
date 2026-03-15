@@ -17,6 +17,9 @@ class RoomController extends Controller
         }], 'rating')->withCount(['reviews' => function ($q) {
             $q->where('is_approved', true);
         }]);
+        if(!$request->has('show_all')){
+            $query->where('is_active', 1);
+        }
         if($request->has('difficulty')){
             $query->where('difficulty', $request->difficulty);
         }
@@ -75,6 +78,17 @@ class RoomController extends Controller
         $room = Room::findOrFail($id);
         $room->update($validateData);
         return response()->json($room, 200);
+    }
+
+    public function toggleStatus(RoomRequest $request, string $id)
+    {
+        $request->validate([
+            'is_active' => 'required|boolean'
+        ]);
+        $room = Room::findOrFail($id);
+        $room->is_active = $request->is_active;
+        $room->save();
+        return response()->json(['message' => 'Статус оновлено', 'is_active' => $room->is_active]);
     }
 
     public function destroy(string $id)
