@@ -11,7 +11,7 @@ const authStore = useAuthStore();
     <aside class="w-64 bg-white border-r border-secondary flex flex-col shadow-sm hidden md:flex">
       <div class="h-20 flex items-center px-6 border-b border-secondary">
         <RouterLink :to="{ name: 'home' }" class="text-2xl font-black text-primary tracking-tight">
-          Quest<span class="text-text">Admin</span>
+          Onea<span class="text-text">Admin</span>
         </RouterLink>
       </div>
 

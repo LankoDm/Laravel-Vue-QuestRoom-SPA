@@ -29,6 +29,19 @@ const toggleStatus = async (room) => {
     alert('Не вдалося змінити статус. Перевірте підключення або бекенд.');
   }
 };
+const deleteRoom = async (id) => {
+  if (!confirm('Ви дійсно хочете видалити цю кімнату? Цю дію неможливо скасувати.')) {
+    return;
+  }
+
+  try {
+    await axios.delete(`http://localhost:8080/api/rooms/${id}`);
+    rooms.value = rooms.value.filter(room => room.id !== id);
+  } catch (error) {
+    console.error('Помилка видалення кімнати:', error);
+    alert('Не вдалося видалити кімнату. Можливо, до неї прив\'язані бронювання.');
+  }
+};
 const formatPrice = (price) => price ? price / 100 : 0;
 
 onMounted(() => {
@@ -86,7 +99,7 @@ onMounted(() => {
               <button
                   @click="toggleStatus(room)"
                   :class="room.is_active ? 'bg-primary' : 'bg-gray-200'"
-                  class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
                   :title="room.is_active ? 'Вимкнути кімнату' : 'Увімкнути кімнату'"
               >
                   <span
@@ -101,7 +114,7 @@ onMounted(() => {
                 <button class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Редагувати">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                 </button>
-                <button class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Видалити">
+                <button @click="deleteRoom(room.id)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Видалити">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
               </div>
