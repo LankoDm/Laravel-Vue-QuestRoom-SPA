@@ -62,13 +62,13 @@ class RoomController extends Controller
         return response()->json($room, 201);
     }
 
-    public function show(string $id)
+    public function show(string $identifier)
     {
         $room = Room::withAvg(['reviews' => function ($query) {
             $query->where('is_approved', true);
         }], 'rating')->withCount(['reviews' => function ($query) {
             $query->where('is_approved', true);
-        }])->findOrFail($id);
+        }])->where('slug', $identifier)->orWhere('id', $identifier)->firstOrFail();
         return response()->json($room);
     }
 
