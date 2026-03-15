@@ -7,6 +7,7 @@ import LoginView from "@/views/Public/LoginView.vue";
 import RegisterView from "@/views/Public/RegisterView.vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import DashboardView from '../views/Admin/DashboardView.vue';
+import RoomsAdminView from '../views/Admin/RoomsAdminView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,6 +28,7 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' },
       children: [
         { path: '', name: 'admin.dashboard', component: DashboardView },
+        { path: 'rooms', name: 'admin.rooms', component: RoomsAdminView },
       ]
     }
   ]
