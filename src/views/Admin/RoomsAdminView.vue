@@ -53,14 +53,14 @@ onMounted(() => {
   <div>
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-3xl font-black text-text">Управління кімнатами</h1>
-      <button class="bg-primary hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold shadow-md transition-colors flex items-center gap-2">
+      <RouterLink :to="{ name: 'admin.rooms.create' }" class="bg-primary hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold shadow-md transition-colors flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Додати кімнату
-      </button>
+      </RouterLink>
     </div>
 
     <div v-if="isLoading" class="text-center py-12 text-gray-500 animate-pulse">
-      Завантаження списку кімнат...
+      Завантаження списку кімнат
     </div>
 
     <div v-else class="bg-white rounded-3xl shadow-sm border border-secondary overflow-hidden">
@@ -111,9 +111,9 @@ onMounted(() => {
 
             <td class="p-4 text-center">
               <div class="flex items-center justify-center gap-2">
-                <button class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Редагувати">
+                <RouterLink :to="{ name: 'admin.rooms.edit', params: { id: room.id } }" class="block p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Редагувати">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                </button>
+                </RouterLink>
                 <button @click="deleteRoom(room.id)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Видалити">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>

@@ -18,7 +18,7 @@ const formatPrice = (kopecks) => {
 
 const fetchRoom = async () => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/rooms/${route.params.id}`);
+    const response = await axios.get(`http://localhost:8080/api/rooms/${route.params.slug}`);
     room.value = response.data.data || response.data;
   } catch (error) {
     console.error('Помилка завантаження кімнати:', error);

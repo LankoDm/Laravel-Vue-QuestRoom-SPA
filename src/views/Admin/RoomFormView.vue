@@ -1,0 +1,233 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import axios from 'axios';
+
+const route = useRoute();
+const router = useRouter();
+const isEditMode = computed(() => !!route.params.id);
+const isLoading = ref(isEditMode.value);
+const isSaving = ref(false);
+const errorMessage = ref('');
+const validationErrors = ref({});
+const form = ref({
+  name: '',
+  slug: '',
+  description: '',
+  difficulty: 'medium',
+  min_players: 2,
+  max_players: 4,
+  weekday_price: null,
+  weekend_price: null,
+  duration_minutes: 60,
+  is_active: 1
+});
+const imageFile = ref(null);
+const imagePreview = ref(null);
+const handleImageUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    imageFile.value = file;
+    imagePreview.value = URL.createObjectURL(file);
+  }
+};
+const fetchRoom = async () => {
+  if (!isEditMode.value) return;
+  try {
+    const response = await axios.get(`http://localhost:8080/api/rooms/${route.params.id}`);
+    const data = response.data.data || response.data;
+    form.value = {
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      difficulty: data.difficulty,
+      min_players: data.min_players,
+      max_players: data.max_players,
+      duration_minutes: data.duration_minutes,
+      is_active: data.is_active,
+      weekday_price: data.weekday_price / 100,
+      weekend_price: data.weekend_price / 100,
+    };
+    if (data.image_path) {
+      imagePreview.value = data.image_path;
+    }
+  } catch (error) {
+    errorMessage.value = 'Не вдалося завантажити дані кімнати';
+    console.error(error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+const saveRoom = async () => {
+  isSaving.value = true;
+  errorMessage.value = '';
+  validationErrors.value = {};
+  try {
+    const formData = new FormData();
+    formData.append('name', form.value.name);
+    formData.append('slug', form.value.slug);
+    formData.append('description', form.value.description);
+    formData.append('difficulty', form.value.difficulty);
+    formData.append('min_players', form.value.min_players);
+    formData.append('max_players', form.value.max_players);
+    formData.append('duration_minutes', form.value.duration_minutes);
+    formData.append('is_active', form.value.is_active ? 1 : 0);
+    formData.append('weekday_price', Math.round(form.value.weekday_price * 100));
+    formData.append('weekend_price', Math.round(form.value.weekend_price * 100));
+    if (imageFile.value) {
+      formData.append('image_path', imageFile.value);
+    }
+    if (isEditMode.value) {
+      formData.append('_method', 'PUT');
+      await axios.post(`http://localhost:8080/api/rooms/${route.params.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    } else {
+      await axios.post('http://localhost:8080/api/rooms', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    router.push({ name: 'admin.rooms' });
+  } catch (error) {
+    if (error.response?.status === 422) {
+      // Зберігаємо всі помилки по полях у нашу змінну
+      validationErrors.value = error.response.data.errors;
+      errorMessage.value = 'Будь ласка, виправте помилки у формі нижче.';
+    } else {
+      errorMessage.value = 'Сталася помилка при збереженні. Перевірте консоль.';
+    }
+  } finally {
+    isSaving.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchRoom();
+});
+</script>
+
+<template>
+  <div class="max-w-4xl mx-auto py-8">
+
+    <div class="flex items-center gap-4 mb-8">
+      <RouterLink :to="{ name: 'admin.rooms' }" class="p-2 bg-white rounded-xl shadow-sm border border-secondary text-gray-500 hover:text-primary transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      </RouterLink>
+      <h1 class="text-3xl font-black text-text">
+        {{ isEditMode ? 'Редагування кімнати' : 'Створення нової кімнати' }}
+      </h1>
+    </div>
+    <div v-if="isLoading" class="text-center py-12 text-gray-500 animate-pulse">
+      Завантаження даних
+    </div>
+    <form v-else @submit.prevent="saveRoom" class="space-y-8">
+      <div v-if="errorMessage" class="p-4 bg-red-50 text-red-600 rounded-xl border border-red-200 font-bold flex items-center gap-2 shadow-sm">
+        <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        {{ errorMessage }}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <div class="md:col-span-2 space-y-6 bg-white p-8 rounded-3xl shadow-sm border border-secondary">
+          <h2 class="text-xl font-bold text-text mb-4">Основна інформація</h2>
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Назва кімнати *</label>
+            <input v-model="form.name" type="text" required
+                   class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
+                   :class="validationErrors.name ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-200' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
+            <span v-if="validationErrors.name" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.name[0] }}</span>
+          </div>
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Slug (URL) *</label>
+            <input v-model="form.slug" type="text" required
+                   class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
+                   :class="validationErrors.slug ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-200' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary text-gray-500'">
+            <span v-if="validationErrors.slug" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.slug[0] }}</span>
+          </div>
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Опис квесту *</label>
+            <textarea v-model="form.description" required rows="5"
+                      class="w-full px-4 py-3 rounded-xl border focus:outline-none resize-none transition-colors"
+                      :class="validationErrors.description ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-200' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'"></textarea>
+            <span v-if="validationErrors.description" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.description[0] }}</span>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Зображення (Обкладинка)</label>
+            <input type="file" @change="handleImageUpload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-purple-500 cursor-pointer mb-4"/>
+            <span v-if="validationErrors.image_path" class="text-xs text-red-500 font-bold mt-1 mb-2 block">{{ validationErrors.image_path[0] }}</span>
+            <div v-if="imagePreview" class="w-full h-48 rounded-xl overflow-hidden border border-secondary bg-gray-100">
+              <img :src="imagePreview" class="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
+        <div class="space-y-6 bg-white p-8 rounded-3xl shadow-sm border border-secondary h-fit">
+          <h2 class="text-xl font-bold text-text mb-4">Налаштування</h2>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Складність *</label>
+            <select v-model="form.difficulty" required
+                    class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
+                    :class="validationErrors.difficulty ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-200' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
+              <option value="easy">Легко (Easy)</option>
+              <option value="medium">Середньо (Medium)</option>
+              <option value="hard">Складно (Hard)</option>
+              <option value="ultra hard">Дуже складно (Ultra Hard)</option>
+            </select>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex-1">
+              <label class="block text-sm font-bold text-gray-700 mb-2">Мін.</label>
+              <input v-model="form.min_players" type="number" min="1" required
+                     class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
+                     :class="validationErrors.min_players ? 'border-red-500 bg-red-50' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
+            </div>
+            <div class="flex-1">
+              <label class="block text-sm font-bold text-gray-700 mb-2">Макс.</label>
+              <input v-model="form.max_players" type="number" min="1" required
+                     class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
+                     :class="validationErrors.max_players ? 'border-red-500 bg-red-50' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
+            </div>
+          </div>
+          <span v-if="validationErrors.min_players || validationErrors.max_players" class="text-xs text-red-500 font-bold block">Перевірте кількість гравців</span>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Тривалість (хв) *</label>
+            <input v-model="form.duration_minutes" type="number" min="10" step="10" required
+                   class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
+                   :class="validationErrors.duration_minutes ? 'border-red-500 bg-red-50' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
+          </div>
+          <div class="pt-4 border-t border-secondary">
+            <h3 class="text-sm font-bold text-gray-700 mb-4">Ціна (в гривнях ₴)</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Будні дні</label>
+                <input v-model="form.weekday_price" type="number" min="0" required placeholder="Напр. 600"
+                       class="w-full px-4 py-3 rounded-xl border font-bold focus:outline-none transition-colors text-primary"
+                       :class="validationErrors.weekday_price ? 'border-red-500 bg-red-50' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Вихідні дні</label>
+                <input v-model="form.weekend_price" type="number" min="0" required placeholder="Напр. 800"
+                       class="w-full px-4 py-3 rounded-xl border font-bold focus:outline-none transition-colors text-primary"
+                       :class="validationErrors.weekend_price ? 'border-red-500 bg-red-50' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
+              </div>
+            </div>
+            <span v-if="validationErrors.weekday_price || validationErrors.weekend_price" class="text-xs text-red-500 font-bold mt-2 block">Перевірте ціну</span>
+          </div>
+
+          <div class="pt-4 border-t border-secondary flex items-center justify-between">
+            <label class="text-sm font-bold text-gray-700">Активна кімната</label>
+            <input v-model="form.is_active" type="checkbox" :true-value="1" :false-value="0" class="w-5 h-5 text-primary rounded focus:ring-primary cursor-pointer border-secondary">
+          </div>
+
+        </div>
+      </div>
+      <div class="flex justify-end pt-4">
+        <button type="submit" :disabled="isSaving" class="bg-primary hover:bg-purple-500 text-white px-10 py-4 rounded-xl font-bold shadow-lg transition-colors disabled:opacity-70 text-lg">
+          {{ isSaving ? 'Збереження' : (isEditMode ? 'Зберегти зміни' : 'Створити кімнату') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</template>

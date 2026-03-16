@@ -8,6 +8,7 @@ import RegisterView from "@/views/Public/RegisterView.vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import DashboardView from '../views/Admin/DashboardView.vue';
 import RoomsAdminView from '../views/Admin/RoomsAdminView.vue';
+import RoomFormView from '../views/Admin/RoomFormView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,9 +18,11 @@ const router = createRouter({
       component: PublicLayout,
       children: [
         { path: '', name: 'home', component: HomeView },
-        { path: 'rooms/:id', name: 'room.show', component: RoomView },
+        { path: '/:slug', name: 'room.show', component: RoomView },
         { path: 'login', name: 'login', component: LoginView },
-        { path: 'register', name: 'register', component: RegisterView }
+        { path: 'register', name: 'register', component: RegisterView },
+        { path: 'rooms/create', name: 'admin.rooms.create', component: RoomFormView },
+        { path: 'rooms/edit/:id', name: 'admin.rooms.edit', component: RoomFormView },
       ]
     },
     {

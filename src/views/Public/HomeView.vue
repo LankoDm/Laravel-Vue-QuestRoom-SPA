@@ -16,8 +16,8 @@ const fetchRooms = async () => {
     isLoading.value = false;
   }
 };
-const openRoom = (id) => {
-  router.push({ name: 'room.show', params: { id: id } });
+const openRoom = (slug) => {
+  router.push({ name: 'room.show', params: { slug: slug } });
 };
 
 onMounted(() => {
@@ -40,7 +40,7 @@ onMounted(() => {
         <div
             v-for="room in rooms"
             :key="room.id"
-            @click="openRoom(room.id)"
+            @click="openRoom(room.slug)"
             class="bg-white rounded-2xl shadow-sm border border-secondary hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col">
 
           <div class="h-56 w-full bg-gray-100 relative">
