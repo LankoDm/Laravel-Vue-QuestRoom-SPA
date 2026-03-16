@@ -9,6 +9,7 @@ import AdminLayout from "@/layouts/AdminLayout.vue";
 import DashboardView from '../views/Admin/DashboardView.vue';
 import RoomsAdminView from '../views/Admin/RoomsAdminView.vue';
 import RoomFormView from '../views/Admin/RoomFormView.vue';
+import BookingsAdminView from '../views/Admin/BookingsAdminView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,8 +22,6 @@ const router = createRouter({
         { path: '/:slug', name: 'room.show', component: RoomView },
         { path: 'login', name: 'login', component: LoginView },
         { path: 'register', name: 'register', component: RegisterView },
-        { path: 'rooms/create', name: 'admin.rooms.create', component: RoomFormView },
-        { path: 'rooms/edit/:id', name: 'admin.rooms.edit', component: RoomFormView },
       ]
     },
     {
@@ -32,6 +31,9 @@ const router = createRouter({
       children: [
         { path: '', name: 'admin.dashboard', component: DashboardView },
         { path: 'rooms', name: 'admin.rooms', component: RoomsAdminView },
+        { path: 'rooms/create', name: 'admin.rooms.create', component: RoomFormView },
+        { path: 'rooms/edit/:id', name: 'admin.rooms.edit', component: RoomFormView },
+        { path: 'bookings', name: 'admin.bookings', component: BookingsAdminView },
       ]
     }
   ]
