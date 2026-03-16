@@ -9,14 +9,20 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Booking extends Model
 {
     protected $fillable = [
-      'user_id',
-      'room_id',
-      'start_time',
-      'end_time',
-      'players_count',
-      'total_price',
-      'status',
-      'admin_note',
+        'user_id',
+        'room_id',
+        'guest_name',
+        'guest_phone',
+        'guest_email',
+        'comment',
+        'payment_method',
+        'payment_status',
+        'start_time',
+        'end_time',
+        'players_count',
+        'total_price',
+        'status',
+        'admin_note'
     ];
 
     protected $casts = [

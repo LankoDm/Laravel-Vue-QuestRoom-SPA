@@ -12,8 +12,14 @@ return new class extends Migration {
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('room_id')->constrained()->onDelete('cascade');
+            $table->string('guest_name');
+            $table->string('guest_phone');
+            $table->string('guest_email')->nullable();
+            $table->text('comment')->nullable();
+            $table->enum('payment_method', ['cash', 'card', 'paypal'])->default('cash');
+            $table->enum('payment_status', ['pending', 'paid', 'refunded'])->default('pending');
             $table->dateTime('start_time');
             $table->dateTime('end_time');
             $table->unsignedInteger('players_count');
