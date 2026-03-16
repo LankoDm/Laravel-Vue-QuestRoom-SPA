@@ -25,6 +25,12 @@ class BookingRequest extends FormRequest
             'room_id' => 'required|exists:rooms,id',
             'start_time' => 'required|date_format:Y-m-d H:i:s|after:now',
             'players_count' => 'required|integer|min:1',
+            'guest_name' => 'required|string|max:255',
+            'guest_phone' => 'required|string|max:20',
+            'guest_email' => 'nullable|email|max:255',
+            'comment' => 'nullable|string',
+            'payment_method' => 'required|in:cash,card,paypal',
+            'total_price' => 'required|integer',
         ];
     }
 }
