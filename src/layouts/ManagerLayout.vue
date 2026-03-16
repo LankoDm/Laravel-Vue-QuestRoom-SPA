@@ -1,0 +1,58 @@
+<script setup>
+import { RouterView, RouterLink } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+
+const authStore = useAuthStore();
+</script>
+
+<template>
+  <div class="min-h-screen flex bg-gray-50 font-sans text-text">
+    <aside class="w-64 bg-white border-r border-secondary flex flex-col shadow-sm">
+      <div class="h-20 flex items-center px-6 border-b border-secondary">
+        <RouterLink :to="{ name: 'home' }" class="text-2xl font-black text-primary tracking-tight">
+          Onea<span class="text-text">Manager</span>
+        </RouterLink>
+      </div>
+      <nav class="flex-1 px-4 py-6 space-y-2">
+        <RouterLink to="/manager/bookings" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-secondary/50 hover:text-primary transition-colors font-bold">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z"></path></svg>
+          Бронювання
+        </RouterLink>
+        <RouterLink to="/manager/reviews" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-secondary/50 hover:text-primary transition-colors font-bold">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
+          Відгуки
+        </RouterLink>
+      </nav>
+
+      <div class="p-4 border-t border-secondary space-y-2">
+        <RouterLink to="/" class="w-full flex items-center justify-center gap-2 px-4 py-3 text-gray-600 hover:bg-secondary hover:text-primary rounded-xl font-bold transition-colors">
+          На головну
+        </RouterLink>
+      </div>
+    </aside>
+    <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <header class="h-20 bg-white border-b border-secondary flex items-center justify-between px-8 shrink-0">
+        <h2 class="text-xl font-bold text-text">Панель Менеджера</h2>
+        <div class="flex items-center gap-4">
+          <span class="text-sm font-medium text-gray-500 font-bold text-primary">
+            {{ authStore.user?.name }}
+          </span>
+          <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-black">
+            {{ authStore.user?.name?.charAt(0) }}
+          </div>
+        </div>
+      </header>
+
+      <div class="flex-1 overflow-auto p-8">
+        <RouterView />
+      </div>
+    </main>
+  </div>
+</template>
+
+<style scoped>
+.router-link-active {
+  background-color: #F3F4F6;
+  color: var(--color-primary);
+}
+</style>

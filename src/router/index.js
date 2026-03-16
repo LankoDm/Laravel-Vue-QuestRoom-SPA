@@ -11,6 +11,8 @@ import RoomsAdminView from '../views/Admin/RoomsAdminView.vue';
 import RoomFormView from '../views/Admin/RoomFormView.vue';
 import BookingsAdminView from '../views/Admin/BookingsAdminView.vue';
 import UsersAdminView from '../views/Admin/UsersAdminView.vue';
+import ManagerLayout from '../layouts/ManagerLayout.vue';
+import ManagerBookingsView from '../views/Manager/ManagerBookingsView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -36,6 +38,22 @@ const router = createRouter({
         { path: 'rooms/edit/:id', name: 'admin.rooms.edit', component: RoomFormView },
         { path: 'bookings', name: 'admin.bookings', component: BookingsAdminView },
         { path: 'users', name: 'admin.users', component: UsersAdminView },
+      ]
+    },
+    {
+      path: '/manager',
+      component: ManagerLayout,
+      beforeEnter: (to, from, next) => {
+        const authStore = useAuthStore();
+        if (authStore.user && (authStore.user.role === 'manager' || authStore.user.role === 'admin')) {
+          next();
+        } else {
+          next({ name: 'home' });
+        }
+      },
+      children: [
+        { path: '', redirect: '/manager/bookings' },
+        { path: 'bookings', name: 'manager.bookings', component: ManagerBookingsView },
       ]
     }
   ]
