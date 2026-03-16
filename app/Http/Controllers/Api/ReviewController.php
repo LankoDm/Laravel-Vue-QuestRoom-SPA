@@ -54,4 +54,13 @@ class ReviewController extends Controller
             'message' => 'Неприйнятний відгук видалено.'
         ]);
     }
+
+    public function manageIndex(){
+        $reviews = Review::with(['user:id,name', 'room:id,name'])
+            ->orderBy('is_approved', 'asc')
+            ->latest()
+            ->get();
+
+        return response()->json($reviews);
+    }
 }

@@ -36,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::patch('/reviews/{review}/approve', [ReviewController::class, 'approve']);
         Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
+        Route::get('/reviews', [ReviewController::class, 'manageIndex']);
     });
 
     Route::middleware([CheckAdmin::class])->group(function () {
