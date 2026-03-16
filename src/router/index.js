@@ -10,6 +10,7 @@ import DashboardView from '../views/Admin/DashboardView.vue';
 import RoomsAdminView from '../views/Admin/RoomsAdminView.vue';
 import RoomFormView from '../views/Admin/RoomFormView.vue';
 import BookingsAdminView from '../views/Admin/BookingsAdminView.vue';
+import UsersAdminView from '../views/Admin/UsersAdminView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +35,7 @@ const router = createRouter({
         { path: 'rooms/create', name: 'admin.rooms.create', component: RoomFormView },
         { path: 'rooms/edit/:id', name: 'admin.rooms.edit', component: RoomFormView },
         { path: 'bookings', name: 'admin.bookings', component: BookingsAdminView },
+        { path: 'users', name: 'admin.users', component: UsersAdminView },
       ]
     }
   ]
