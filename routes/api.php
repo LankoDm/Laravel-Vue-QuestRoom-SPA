@@ -4,13 +4,14 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\BookingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\BookingController;
-use \App\Http\Middleware\CheckAdmin;
-use \App\Models\Room;
-use \App\Models\Booking;
-use \App\Models\Review;
+use App\Http\Middleware\CheckAdmin;
+use App\Http\Middleware\CheckManager;
+use App\Models\Room;
+use App\Models\Booking;
+use App\Models\Review;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -24,16 +25,30 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    Route::apiResource('/bookings', BookingController::class);
+
+    Route::post('/bookings', [BookingController::class, 'store']);
     Route::post('/reviews', [ReviewController::class, 'store']);
-    Route::middleware([CheckAdmin::class])->group(function () {
-        Route::patch('/rooms/{room}/toggle-status', [RoomController::class, 'toggleStatus']);
-        Route::post('/rooms', [RoomController::class, 'store']);
-        Route::put('/rooms/{room}', [RoomController::class, 'update']);
-        Route::delete('/rooms/{room}', [RoomController::class, 'destroy']);
-        Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
+
+    Route::middleware([CheckManager::class])->group(function () {
+        Route::get('/bookings', [BookingController::class, 'index']);
+        Route::patch('/bookings/{id}/confirm', [BookingController::class, 'bookingConfirmation']);
+        Route::patch('/bookings/{id}/cancel', [BookingController::class, 'bookingCancellation']);
+
         Route::patch('/reviews/{review}/approve', [ReviewController::class, 'approve']);
         Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
+    });
+
+    Route::middleware([CheckAdmin::class])->group(function () {
+        Route::post('/rooms', [RoomController::class, 'store']);
+        Route::put('/rooms/{room}', [RoomController::class, 'update']);
+        Route::patch('/rooms/{room}/toggle-status', [RoomController::class, 'toggleStatus']);
+        Route::delete('/rooms/{room}', [RoomController::class, 'destroy']);
+
+        Route::get('/users', [UserController::class, 'index']);
+        Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
+
+        Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
+
         Route::get('/admin/stats', function () {
             return response()->json([
                 'total_rooms' => Room::count(),
