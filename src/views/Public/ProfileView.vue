@@ -1,0 +1,194 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import axios from 'axios';
+import { useAuthStore } from '@/stores/auth';
+
+const authStore = useAuthStore();
+const bookings = ref([]);
+const isLoading = ref(true);
+const selectedBooking = ref(null);
+const isModalOpen = ref(false);
+const fetchMyBookings = async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/api/user/bookings');
+    bookings.value = response.data.data || response.data;
+  } catch (error) {
+    console.error('Помилка завантаження бронювань:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+const viewDetails = async (id) => {
+  try {
+    const response = await axios.get(`http://localhost:8080/api/bookings/${id}`);
+    selectedBooking.value = response.data.data || response.data;
+    isModalOpen.value = true;
+  } catch (error) {
+    alert('Не вдалося завантажити деталі бронювання.');
+  }
+};
+const activeBookings = computed(() => bookings.value.filter(b => ['pending', 'confirmed'].includes(b.status)));
+const pastBookings = computed(() => bookings.value.filter(b => ['finished', 'cancelled'].includes(b.status)));
+const formatPrice = (price) => price ? price / 100 : 0;
+const formatDate = (dateString) => {
+  if (!dateString) return '—';
+  return new Date(dateString).toLocaleString('uk-UA', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+};
+const statusClasses = {
+  pending: 'bg-yellow-100 text-yellow-700',
+  confirmed: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
+  finished: 'bg-blue-100 text-blue-700'
+};
+const statusNames = {
+  pending: 'Очікує',
+  confirmed: 'Підтверджено',
+  cancelled: 'Скасовано',
+  finished: 'Завершено'
+};
+const getFirstImage = (imagePath) => {
+  if (!imagePath) return null;
+  if (Array.isArray(imagePath)) return imagePath[0];
+  if (typeof imagePath === 'string' && imagePath.startsWith('[')) {
+    try { return JSON.parse(imagePath)[0]; } catch (e) { return imagePath; }
+  }
+  return imagePath;
+};
+
+onMounted(fetchMyBookings);
+</script>
+
+<template>
+  <div class="py-10 px-6 max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+
+      <div class="lg:col-span-1 space-y-6">
+        <div class="bg-white p-8 rounded-3xl shadow-sm border border-secondary text-center sticky top-28">
+          <div class="w-32 h-32 mx-auto rounded-full bg-primary/10 flex items-center justify-center text-primary text-5xl font-black mb-6 border-4 border-white shadow-lg">
+            {{ authStore.user?.name?.charAt(0) || 'U' }}
+          </div>
+          <h1 class="text-2xl font-black text-text mb-1">{{ authStore.user?.name }}</h1>
+          <p class="text-gray-500 font-medium mb-6">{{ authStore.user?.email }}</p>
+
+          <div class="bg-gray-50 p-4 rounded-2xl text-left border border-gray-100 space-y-3">
+            <div>
+              <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Дата реєстрації</span>
+              <span class="font-bold text-text">{{ new Date(authStore.user?.created_at).toLocaleDateString('uk-UA') }}</span>
+            </div>
+          </div>
+
+          <button @click="authStore.logout" class="w-full cursor-pointer mt-6 bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-600 hover:text-white transition-colors">
+            Вийти з акаунта
+          </button>
+        </div>
+      </div>
+
+      <div class="lg:col-span-2">
+        <h2 class="text-3xl font-black text-text mb-8">Мої бронювання</h2>
+
+        <div v-if="isLoading" class="text-center py-20 text-gray-400 animate-pulse font-bold">
+          Завантаження історії
+        </div>
+
+        <div v-else class="space-y-10">
+          <section>
+            <h3 class="text-xl font-bold text-text mb-4 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-green-500"></span> Актуальні
+            </h3>
+            <div v-if="activeBookings.length === 0" class="bg-white p-8 rounded-3xl border border-secondary text-gray-500 text-center">
+              У вас немає запланованих ігор.
+            </div>
+            <div class="space-y-4">
+              <div v-for="booking in activeBookings" :key="booking.id" class="bg-white p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:border-primary transition-colors">
+                <div class="flex items-center gap-4">
+                  <img v-if="booking.room?.image_path" :src="getFirstImage(booking.room.image_path)" class="w-16 h-16 rounded-xl object-cover shrink-0" />
+                  <div>
+                    <h4 class="font-bold text-lg text-text">{{ booking.room?.name }}</h4>
+                    <p class="text-sm font-bold text-primary">{{ formatDate(booking.start_time) }}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-4 sm:ml-auto">
+                  <span class="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider" :class="statusClasses[booking.status]">
+                    {{ statusNames[booking.status] }}
+                  </span>
+                  <button @click="viewDetails(booking.id)" class="text-gray-400 hover:text-primary p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section v-if="pastBookings.length > 0">
+            <h3 class="text-xl font-bold text-gray-500 mb-4 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-gray-300"></span> Історія
+            </h3>
+            <div class="space-y-4">
+              <div v-for="booking in pastBookings" :key="booking.id" class="bg-white p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
+                <div class="flex items-center gap-4">
+                  <img v-if="booking.room?.image_path" :src="getFirstImage(booking.room.image_path)" class="w-12 h-12 rounded-xl object-cover shrink-0 grayscale" />
+                  <div>
+                    <h4 class="font-bold text-text">{{ booking.room?.name }}</h4>
+                    <p class="text-xs text-gray-500">{{ formatDate(booking.start_time) }}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-4 sm:ml-auto">
+                  <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider" :class="statusClasses[booking.status]">
+                    {{ statusNames[booking.status] }}
+                  </span>
+                  <button v-if="booking.status === 'finished'" class="text-sm font-bold text-primary hover:underline">
+                    Залишити відгук
+                  </button>
+                  <button @click="viewDetails(booking.id)" class="text-gray-400 hover:text-primary p-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="isModalOpen && selectedBooking" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click="isModalOpen = false">
+      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden" @click.stop>
+        <div class="bg-primary p-6 text-white flex justify-between items-center">
+          <h3 class="text-xl font-black">Деталі бронювання #{{ selectedBooking.id }}</h3>
+          <button @click="isModalOpen = false" class="text-white/70 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4 text-text">
+          <div class="flex justify-between border-b border-gray-100 pb-3">
+            <span class="text-gray-500">Кімната</span>
+            <span class="font-bold">{{ selectedBooking.room?.name }}</span>
+          </div>
+          <div class="flex justify-between border-b border-gray-100 pb-3">
+            <span class="text-gray-500">Дата гри</span>
+            <span class="font-bold text-primary">{{ formatDate(selectedBooking.start_time) }}</span>
+          </div>
+          <div class="flex justify-between border-b border-gray-100 pb-3">
+            <span class="text-gray-500">Ім'я гостя</span>
+            <span class="font-bold">{{ selectedBooking.guest_name }}</span>
+          </div>
+          <div class="flex justify-between border-b border-gray-100 pb-3">
+            <span class="text-gray-500">Телефон</span>
+            <span class="font-bold">{{ selectedBooking.guest_phone }}</span>
+          </div>
+          <div class="flex justify-between border-b border-gray-100 pb-3">
+            <span class="text-gray-500">Спосіб оплати</span>
+            <span class="font-bold uppercase">{{ selectedBooking.payment_method }}</span>
+          </div>
+          <div class="flex justify-between pt-2">
+            <span class="text-gray-500">Сума</span>
+            <span class="font-black text-xl">{{ formatPrice(selectedBooking.total_price) }} ₴</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</template>

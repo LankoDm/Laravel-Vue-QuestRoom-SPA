@@ -38,8 +38,12 @@ const authStore = useAuthStore();
               Панель менеджера
             </RouterLink>
 
-            <button class="font-bold text-gray-600 hover:text-primary">Профіль</button>
-            <button @click="authStore.logout" class="text-gray-400 hover:text-red-500 transition-colors" title="Вийти">
+            <RouterLink
+                :to="{ name: 'profile' }"
+                class="font-bold text-gray-600 hover:text-primary transition-colors">
+              Профіль
+            </RouterLink>
+            <button @click="authStore.logout" class="text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Вийти">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
             </button>
           </template>

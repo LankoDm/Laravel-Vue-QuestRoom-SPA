@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import {ref, onMounted, computed, watch, onUnmounted} from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
@@ -11,11 +11,13 @@ const isLoading = ref(true);
 
 const calendarSection = ref(null);
 const bookingPanel = ref(null);
-
+const holdToken = ref(Math.random().toString(36).substring(2, 15));
 const selectedSlot = ref(null);
 const selectedPlayers = ref(null);
 const isModalOpen = ref(false);
 const isSubmitting = ref(false);
+const timeLeft = ref(600);
+const timerInterval = ref(null);
 const bookingForm = ref({
   name: '',
   phone: '',
@@ -91,7 +93,7 @@ const schedule = computed(() => {
       const [hour, minute] = time.split(':').map(Number);
       const slotDateObj = new Date(d);
       slotDateObj.setHours(hour, minute, 0, 0);
-      const isPast = slotDateObj.getTime() < now.getTime() + (30 * 60 * 1000);
+      const isPast = slotDateObj.getTime() < now.getTime();
       const isLate = hour >= 21;
       const slotBase = basePrice + (isLate ? 200 : 0);
       const finalPrice = slotBase + surcharge;
@@ -135,6 +137,57 @@ const selectSlot = (day, slot) => {
   }, 50);
 };
 
+const formattedTimeLeft = computed(() => {
+  const m = Math.floor(timeLeft.value / 60).toString().padStart(2, '0');
+  const s = (timeLeft.value % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+});
+
+const startTimer = () => {
+  timeLeft.value = 600;
+  clearInterval(timerInterval.value);
+  timerInterval.value = setInterval(() => {
+    if (timeLeft.value > 0) {
+      timeLeft.value--;
+    } else {
+      closeModalWithTimeout();
+    }
+  }, 1000);
+};
+
+const closeModalWithTimeout = () => {
+  clearInterval(timerInterval.value);
+  isModalOpen.value = false;
+  alert('Час на оформлення вичерпано. Будь ласка, оберіть час ще раз.');
+};
+
+const openBookingModal = async () => {
+  isSubmitting.value = true;
+  try {
+    const backendStartTime = `${selectedSlot.value.backendDate} ${selectedSlot.value.time}:00`;
+    await axios.post('http://localhost:8080/api/bookings/hold', {
+      room_id: room.value.id,
+      start_time: backendStartTime,
+      hold_token: holdToken.value
+    });
+    isModalOpen.value = true;
+    startTimer();
+  } catch (error) {
+    if (error.response?.status === 409) {
+      alert('Хтось інший щойно почав бронювати цей час! Будь ласка, оберіть інший слот.');
+      selectedSlot.value = null;
+    } else {
+      alert('Помилка сервера. Спробуйте ще раз.');
+    }
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const closeBookingModal = () => {
+  clearInterval(timerInterval.value);
+  isModalOpen.value = false;
+};
 const submitBooking = async () => {
   isSubmitting.value = true;
   try {
@@ -148,9 +201,11 @@ const submitBooking = async () => {
       guest_phone: bookingForm.value.phone,
       guest_email: bookingForm.value.email,
       comment: bookingForm.value.comment,
-      payment_method: bookingForm.value.payment_method
+      payment_method: bookingForm.value.payment_method,
+      hold_token: holdToken.value
     };
     await axios.post('http://localhost:8080/api/bookings', payload);
+    clearInterval(timerInterval.value);
     isModalOpen.value = false;
     selectedSlot.value = null;
     alert('Бронювання успішно створено! Очікуйте дзвінка менеджера.');
@@ -162,8 +217,10 @@ const submitBooking = async () => {
   }
 };
 
-onMounted(() => {
-  fetchRoom();
+onMounted(fetchRoom);
+
+onUnmounted(() => {
+  clearInterval(timerInterval.value);
 });
 </script>
 
@@ -234,8 +291,9 @@ onMounted(() => {
               <p class="text-sm text-gray-500">До сплати</p>
               <p class="text-4xl font-black text-text mb-8">{{ currentPrice }} ₴</p>
 
-              <button @click="isModalOpen = true" class="w-full bg-primary hover:bg-purple-500 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-primary/30">
-                Перейти до бронювання
+              <button @click="openBookingModal" :disabled="isSubmitting" class="w-full bg-primary hover:bg-purple-500 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-primary/30 disabled:opacity-70">
+                <span v-if="isSubmitting">Перевірка часу</span>
+                <span v-else>Перейти до бронювання</span>
               </button>
 
               <button @click="selectedSlot = null" class="mt-4 text-sm text-gray-400 hover:text-primary transition-colors">
@@ -283,8 +341,7 @@ onMounted(() => {
                   :key="n"
                   @click="selectedPlayers = room.min_players + n - 1"
                   :class="selectedPlayers === (room.min_players + n - 1) ? 'bg-primary text-white shadow-md transform scale-105 border-primary' : 'bg-transparent border-secondary text-gray-600 hover:border-primary'"
-                  class="w-14 h-14 rounded-2xl border-2 font-black text-lg flex items-center justify-center transition-all duration-200"
-              >
+                  class="w-14 h-14 rounded-2xl border-2 font-black text-lg flex items-center justify-center transition-all duration-200">
                 {{ room.min_players + n - 1 }}
               </button>
             </div>
@@ -313,8 +370,7 @@ onMounted(() => {
                     : selectedSlot?.date === day.dateStr && selectedSlot?.time === slot.time
                       ? 'border-primary bg-primary text-white shadow-md transform scale-105'
                       : 'border-secondary bg-transparent hover:border-primary text-text hover:bg-secondary/30'
-                ]"
-              >
+                ]">
                 <span class="text-lg font-bold">{{ slot.time }}</span>
                 <span class="text-xs font-medium opacity-80 mt-1">{{ slot.price }} ₴</span>
               </button>
@@ -326,12 +382,18 @@ onMounted(() => {
 
     </div>
 
-    <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" @click="isModalOpen = false">
+    <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" @click="closeBookingModal">
       <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden" @click.stop>
 
         <div class="bg-primary p-6 text-white flex justify-between items-center relative overflow-hidden">
           <h3 class="text-2xl font-black relative z-10">Оформлення броні</h3>
-          <button @click="isModalOpen = false" class="relative z-10 text-white/70 hover:text-white transition-colors bg-white/10 p-2 rounded-full">
+
+          <div class="relative z-10 flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-lg border border-white/30" :class="{'animate-pulse text-red-200': timeLeft < 60}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="font-black font-mono tracking-wider">{{ formattedTimeLeft }}</span>
+          </div>
+
+          <button @click="closeBookingModal" class="relative z-10 text-white/70 hover:text-white transition-colors bg-white/10 p-2 rounded-full ml-4">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
           <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
