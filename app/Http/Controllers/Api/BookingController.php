@@ -11,6 +11,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Events\BookingCreated;
+use App\Jobs\FinishBookingJob;
+use Illuminate\Support\Facades\Cache;
 
 class BookingController extends Controller
 {
@@ -36,6 +38,14 @@ class BookingController extends Controller
             }
             $startTime = Carbon::parse($request->start_time);
             $endTime = $startTime->copy()->addMinutes($room->duration_minutes);
+            $cacheKey = "hold_room_{$room->id}_time_{$startTime->timestamp}";
+            $holder = Cache::get($cacheKey);
+            $identifier = $request->hold_token;
+            if ($holder && $holder !== $identifier) {
+                return response()->json([
+                    'message' => 'На жаль, хтось інший вже почав оформлювати цей час.'
+                ], 409);
+            }
             $isConflict = Booking::where('room_id', $room->id)
                 ->where('status', '!=', 'cancelled')
                 ->where('start_time', '<', $endTime)
@@ -67,6 +77,8 @@ class BookingController extends Controller
                 'comment' => $request->comment,
                 'payment_method' => $request->payment_method,
             ]);
+            Cache::forget($cacheKey);
+            $booking->load('room');
             BookingCreated::dispatch($booking);
             return response()->json($booking, 201);
         });
@@ -87,15 +99,24 @@ class BookingController extends Controller
     public function update(BookingRequest $request, string $id)
     {
         $booking = Booking::findOrFail($id);
-        $booking->update([$request->validated()->only('status', 'admin_note')]);
+        $booking->update($request->validated()->only('status', 'admin_note'));
         return response()->json($booking);
     }
 
     public function bookingConfirmation(string $id)
     {
         $booking = Booking::findOrFail($id);
-        $booking->update(['status' => 'confirmed']);
-        return response()->json(['message' => 'Бронювання підтвердженно.']);
+        if ($booking->status !== 'pending') {
+            return response()->json(['message' => 'Бронювання вже оброблено'], 400);
+        }
+        $booking->status = 'confirmed';
+        $booking->save();
+        $finishTime = Carbon::parse($booking->end_time);
+        FinishBookingJob::dispatch($booking->id)->delay($finishTime);
+        return response()->json([
+            'message' => 'Бронювання підтверджено. Задача на завершення створена.',
+            'booking' => $booking
+        ]);
     }
 
     public function bookingCancellation(string $id)
@@ -110,5 +131,42 @@ class BookingController extends Controller
         $booking = Booking::findOrFail($id);
         $booking->delete();
         return response()->json(['message' => 'Бронювання видалено.']);
+    }
+
+    public function myBookings(Request $request)
+    {
+        $bookings = Booking::with('room:id,name,image_path,slug')
+            ->where('user_id', $request->user()->id)
+            ->orderBy('start_time', 'desc')
+            ->get();
+
+        return response()->json($bookings);
+    }
+    public function holdSlot(Request $request)
+    {
+        $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'start_time' => 'required|date',
+            'hold_token' => 'required|string',
+        ]);
+        $roomId = $request->room_id;
+        $startTime = Carbon::parse($request->start_time);
+        $isConflict = Booking::where('room_id', $roomId)
+            ->where('status', '!=', 'cancelled')
+            ->where('start_time', '<=', $startTime)
+            ->where('end_time', '>', $startTime)
+            ->exists();
+        if ($isConflict) {
+            return response()->json(['message' => 'Цей час вже заброньовано.'], 422);
+        }
+        $cacheKey = "hold_room_{$roomId}_time_{$startTime->timestamp}";
+        $identifier = $request->hold_token;
+        $locked = Cache::add($cacheKey, $identifier, now()->addMinutes(10));
+        if (!$locked && Cache::get($cacheKey) !== $identifier) {
+            return response()->json([
+                'message' => 'Цей час зараз оформлює інший користувач. Спробуйте пізніше або виберіть інший час.'
+            ], 409);
+        }
+        return response()->json(['message' => 'Час успішно зарезервовано на 10 хвилин.']);
     }
 }

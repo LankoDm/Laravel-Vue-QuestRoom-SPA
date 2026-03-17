@@ -22,6 +22,9 @@ Route::get('/rooms/{room}/reviews', [ReviewController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user/bookings', [BookingController::class, 'myBookings']);
+    Route::get('/bookings/{id}', [BookingController::class, 'show']);
+    Route::post('/bookings/hold', [BookingController::class, 'holdSlot']);
     Route::get('/user', function (Request $request) {
         return $request->user();
     });

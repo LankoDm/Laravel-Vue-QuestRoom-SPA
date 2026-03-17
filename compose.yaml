@@ -81,6 +81,21 @@ services:
         environment:
             WWWUSER: '${WWWUSER}'
             LARAVEL_SAIL: 1
+    queue:
+        image: sail-8.5/app
+        command: php artisan queue:work redis --tries=3 --timeout=90
+        volumes:
+            - '.:/var/www/html'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+        networks:
+            - sail
+        depends_on:
+            redis:
+                condition: service_healthy
+            mysql:
+                condition: service_healthy
 networks:
     sail:
         driver: bridge
