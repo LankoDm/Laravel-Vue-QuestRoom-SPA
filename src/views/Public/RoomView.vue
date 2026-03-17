@@ -8,7 +8,15 @@ const route = useRoute();
 const authStore = useAuthStore();
 const room = ref(null);
 const isLoading = ref(true);
-
+const reviews = ref([]);
+const fetchReviews = async () => {
+  try {
+    const response = await axios.get(`http://localhost:8080/api/rooms/${room.value.id}/reviews`);
+    reviews.value = response.data.data || response.data;
+  } catch (error) {
+    console.error('Помилка завантаження відгуків:', error);
+  }
+};
 const calendarSection = ref(null);
 const bookingPanel = ref(null);
 const holdToken = ref(Math.random().toString(36).substring(2, 15));
@@ -41,6 +49,7 @@ const fetchRoom = async () => {
     const response = await axios.get(`http://localhost:8080/api/rooms/${route.params.slug}`);
     room.value = response.data.data || response.data;
     selectedPlayers.value = room.value.min_players;
+    await fetchReviews();
   } catch (error) {
     console.error('Помилка завантаження кімнати:', error);
   } finally {
@@ -93,11 +102,20 @@ const schedule = computed(() => {
       const [hour, minute] = time.split(':').map(Number);
       const slotDateObj = new Date(d);
       slotDateObj.setHours(hour, minute, 0, 0);
-      const isPast = slotDateObj.getTime() < now.getTime();
+      const slotStartTime = slotDateObj.getTime();
+      const slotEndTime = slotStartTime + (duration * 60 * 1000);
+      const isPast = slotStartTime < now.getTime();
+      const isBooked = room.value.bookings?.some(b => {
+        const bStart = new Date(b.start_time.replace(' ', 'T')).getTime();
+        const bEnd = new Date(b.end_time.replace(' ', 'T')).getTime();
+        return slotStartTime < bEnd && slotEndTime > bStart;
+      }) || false;
+
       const isLate = hour >= 21;
       const slotBase = basePrice + (isLate ? 200 : 0);
       const finalPrice = slotBase + surcharge;
-      return { time, price: finalPrice, basePrice: slotBase, isPast };
+
+      return { time, price: finalPrice, basePrice: slotBase, isPast, isBooked };
     });
 
     days.push({
@@ -217,7 +235,9 @@ const submitBooking = async () => {
   }
 };
 
-onMounted(fetchRoom);
+onMounted(() => {
+  fetchRoom();
+});
 
 onUnmounted(() => {
   clearInterval(timerInterval.value);
@@ -361,21 +381,45 @@ onUnmounted(() => {
               <button
                   v-for="slot in day.slots"
                   :key="slot.time"
-                  :disabled="slot.isPast"
-                  @click="!slot.isPast && selectSlot(day, slot)"
+                  :disabled="slot.isPast || slot.isBooked"
+                  @click="!(slot.isPast || slot.isBooked) && selectSlot(day, slot)"
                   :class="[
                   'flex flex-col items-center justify-center px-4 py-2 rounded-xl border-2 transition-all duration-200 min-w-[80px]',
-                  slot.isPast
+                  (slot.isPast || slot.isBooked)
                     ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
                     : selectedSlot?.date === day.dateStr && selectedSlot?.time === slot.time
                       ? 'border-primary bg-primary text-white shadow-md transform scale-105'
                       : 'border-secondary bg-transparent hover:border-primary text-text hover:bg-secondary/30'
                 ]">
                 <span class="text-lg font-bold">{{ slot.time }}</span>
-                <span class="text-xs font-medium opacity-80 mt-1">{{ slot.price }} ₴</span>
+                <span v-if="slot.isBooked" class="text-[10px] font-black uppercase text-red-400 mt-1 tracking-widest">Зайнято</span>
+                <span v-else class="text-xs font-medium opacity-80 mt-1">{{ slot.price }} ₴</span>
               </button>
             </div>
 
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-12 pt-12 border-t border-secondary">
+        <h2 class="text-2xl font-bold mb-6 text-text">Відгуки гравців ({{ reviews.length }})</h2>
+
+        <div v-if="reviews.length === 0" class="bg-gray-50 rounded-2xl p-6 text-center text-gray-500 font-medium border border-secondary">
+          Поки що немає відгуків. Станьте першим, хто поділиться враженнями після гри!
+        </div>
+
+        <div v-else class="space-y-4">
+          <div v-for="review in reviews" :key="review.id" class="bg-white p-6 rounded-2xl border border-secondary shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+              <div class="font-bold text-text">{{ review.user?.name || 'Гість' }}</div>
+              <div class="flex text-yellow-400">
+                <svg v-for="i in 5" :key="i" class="w-4 h-4" :class="i <= review.rating ? 'fill-current' : 'text-gray-200 fill-current'" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+              </div>
+            </div>
+            <p class="text-gray-600 italic text-sm mb-3">"{{ review.message }}"</p>
+            <div class="text-xs text-gray-400">{{ new Date(review.created_at).toLocaleDateString('uk-UA') }}</div>
           </div>
         </div>
       </div>

@@ -36,6 +36,33 @@ const formatDate = (dateString) => {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 };
+const isReviewModalOpen = ref(false);
+const reviewForm = ref({
+  room_id: null,
+  room_name: '',
+  rating: 5,
+  message: ''
+});
+const openReviewModal = (booking) => {
+  reviewForm.value.room_id = booking.room?.id;
+  reviewForm.value.room_name = booking.room?.name;
+  reviewForm.value.rating = 5;
+  reviewForm.value.message = '';
+  isReviewModalOpen.value = true;
+};
+const submitReview = async () => {
+  try {
+    await axios.post('http://localhost:8080/api/reviews', {
+      room_id: reviewForm.value.room_id,
+      rating: reviewForm.value.rating,
+      message: reviewForm.value.message
+    });
+    alert('Дякуємо! Ваш відгук успішно надіслано на модерацію.');
+    isReviewModalOpen.value = false;
+  } catch (error) {
+    alert(error.response?.data?.message || 'Помилка при відправці відгуку');
+  }
+};
 const statusClasses = {
   pending: 'bg-yellow-100 text-yellow-700',
   confirmed: 'bg-green-100 text-green-700',
@@ -113,7 +140,7 @@ onMounted(fetchMyBookings);
                   <span class="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider" :class="statusClasses[booking.status]">
                     {{ statusNames[booking.status] }}
                   </span>
-                  <button @click="viewDetails(booking.id)" class="text-gray-400 hover:text-primary p-2">
+                  <button @click="viewDetails(booking.id)" class="text-gray-400 hover:text-primary p-2 cursor-pointer">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                   </button>
                 </div>
@@ -138,10 +165,10 @@ onMounted(fetchMyBookings);
                   <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider" :class="statusClasses[booking.status]">
                     {{ statusNames[booking.status] }}
                   </span>
-                  <button v-if="booking.status === 'finished'" class="text-sm font-bold text-primary hover:underline">
+                  <button v-if="booking.status === 'finished'" @click="openReviewModal(booking)" class="text-sm font-bold text-primary hover:underline cursor-pointer">
                     Залишити відгук
                   </button>
-                  <button @click="viewDetails(booking.id)" class="text-gray-400 hover:text-primary p-2">
+                  <button @click="viewDetails(booking.id)" class="text-gray-400 hover:text-primary p-2 cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                   </button>
                 </div>
@@ -156,7 +183,7 @@ onMounted(fetchMyBookings);
       <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden" @click.stop>
         <div class="bg-primary p-6 text-white flex justify-between items-center">
           <h3 class="text-xl font-black">Деталі бронювання #{{ selectedBooking.id }}</h3>
-          <button @click="isModalOpen = false" class="text-white/70 hover:text-white">
+          <button @click="isModalOpen = false" class="text-white/70 hover:text-white cursor-pointer">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
@@ -190,5 +217,38 @@ onMounted(fetchMyBookings);
       </div>
     </div>
 
+    <div v-if="isReviewModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click="isReviewModalOpen = false">
+      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8" @click.stop>
+        <h3 class="text-2xl font-black mb-2 text-text">Ваші враження від «{{ reviewForm.room_name }}»</h3>
+        <p class="text-gray-500 mb-6 font-medium">Ваш відгук допоможе іншим обрати найкращий квест!</p>
+
+        <div class="flex justify-center gap-2 mb-8">
+          <svg v-for="star in 5" :key="star"
+               @click="reviewForm.rating = star"
+               class="w-10 h-10 star-rating transition-all"
+               :class="star <= reviewForm.rating ? 'text-yellow-400 fill-current' : 'text-gray-200 fill-current'"
+               viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+          </svg>
+        </div>
+
+        <textarea v-model="reviewForm.message" rows="4" placeholder="Що вам найбільше сподобалось?"
+                  class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none mb-6 resize-none bg-gray-50 text-text font-medium"></textarea>
+
+        <div class="flex gap-4">
+          <button @click="isReviewModalOpen = false" class="flex-1 px-4 py-3 font-bold text-gray-400 hover:text-text transition-colors cursor-pointer">Скасувати</button>
+          <button @click="submitReview" class="flex-1 bg-primary text-white font-black py-3 rounded-xl shadow-lg hover:bg-purple-600 transition-all cursor-pointer">Надіслати</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
+<style scoped>
+.star-rating {
+  cursor: pointer;
+}
+.star-rating:hover {
+  transform: scale(1.1);
+}
+</style>
