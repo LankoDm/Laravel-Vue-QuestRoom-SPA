@@ -23,7 +23,7 @@ class ReviewRequest extends FormRequest
     {
         return [
             'room_id' => 'required|exists:rooms,id',
-            'message' => 'required|string|min:10',
+            'message' => 'required|string|min:2',
             'rating' => 'nullable|integer|min:1|max:5',
         ];
     }

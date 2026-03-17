@@ -19,17 +19,17 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/rooms', [RoomController::class, 'index']);
 Route::get('/rooms/{room}', [RoomController::class, 'show']);
 Route::get('/rooms/{room}/reviews', [ReviewController::class, 'index']);
-
+Route::post('/bookings', [BookingController::class, 'store']);
+Route::post('/bookings/hold', [BookingController::class, 'holdSlot']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user/bookings', [BookingController::class, 'myBookings']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
-    Route::post('/bookings/hold', [BookingController::class, 'holdSlot']);
+
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
 
-    Route::post('/bookings', [BookingController::class, 'store']);
     Route::post('/reviews', [ReviewController::class, 'store']);
 
     Route::middleware([CheckManager::class])->group(function () {
