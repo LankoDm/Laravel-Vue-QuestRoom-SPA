@@ -13,6 +13,7 @@ import BookingsAdminView from '../views/Admin/BookingsAdminView.vue';
 import UsersAdminView from '../views/Admin/UsersAdminView.vue';
 import ManagerLayout from '../layouts/ManagerLayout.vue';
 import ManagerBookingsView from '../views/Manager/ManagerBookingsView.vue';
+import ManagerReviewsView from "@/views/Manager/ManagerReviewsView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -54,6 +55,7 @@ const router = createRouter({
       children: [
         { path: '', redirect: '/manager/bookings' },
         { path: 'bookings', name: 'manager.bookings', component: ManagerBookingsView },
+        { path: 'reviews', name: 'manager.reviews', component: ManagerReviewsView },
       ]
     }
   ]
