@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RoomController;
+use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BookingController;
 use Illuminate\Http\Request;
@@ -21,7 +23,8 @@ Route::get('/rooms/{room}', [RoomController::class, 'show']);
 Route::get('/rooms/{room}/reviews', [ReviewController::class, 'index']);
 Route::post('/bookings', [BookingController::class, 'store']);
 Route::post('/bookings/hold', [BookingController::class, 'holdSlot']);
-Route::post('/bookings/{booking}/pay', [\App\Http\Controllers\Api\PaymentController::class, 'createCheckoutSession']);
+Route::post('/bookings/{booking}/pay', [PaymentController::class, 'createCheckoutSession']);
+Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user/bookings', [BookingController::class, 'myBookings']);

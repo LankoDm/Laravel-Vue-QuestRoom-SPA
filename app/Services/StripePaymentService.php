@@ -13,6 +13,7 @@ class StripePaymentService implements PaymentGatewayInterface
     {
         Stripe::setApiKey(config('services.stripe.secret')); // секретний ключ
         $customerEmail = $booking->guest_email ?? $booking->user?->email;
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
         $sessionConfig = [ // створюємо сесію в Stripe
             'payment_method_types' => ['card'],
             'line_items' => [[
@@ -26,8 +27,8 @@ class StripePaymentService implements PaymentGatewayInterface
                 'quantity' => 1,
             ]],
             'mode' => 'payment',
-            'success_url' => 'http://localhost:5173/success',
-            'cancel_url' => 'http://localhost:5173/cancel',
+            'success_url' => $frontendUrl . '/success?session_id={CHECKOUT_SESSION_ID}',
+            'cancel_url' => $frontendUrl . '/cancel',
             'metadata' => [
                 'booking_id' => $booking->id,
             ],
