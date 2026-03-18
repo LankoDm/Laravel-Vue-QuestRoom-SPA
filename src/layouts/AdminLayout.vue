@@ -6,16 +6,16 @@ const authStore = useAuthStore();
 </script>
 
 <template>
-  <div class="min-h-screen flex bg-gray-50 font-sans text-text">
+  <div class="h-screen w-full flex bg-gray-50 font-sans text-text overflow-hidden">
 
-    <aside class="w-64 bg-white border-r border-secondary flex flex-col shadow-sm hidden md:flex">
-      <div class="h-20 flex items-center px-6 border-b border-secondary">
+    <aside class="w-64 h-full shrink-0 bg-white border-r border-secondary flex flex-col shadow-sm hidden md:flex">
+      <div class="h-20 shrink-0 flex items-center px-6 border-b border-secondary">
         <RouterLink :to="{ name: 'home' }" class="text-2xl font-black text-primary tracking-tight">
           Onea<span class="text-text">Admin</span>
         </RouterLink>
       </div>
 
-      <nav class="flex-1 px-4 py-6 space-y-2">
+      <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-2">
         <RouterLink to="/admin" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-secondary/50 hover:text-primary transition-colors font-bold">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
           Дашборд
@@ -34,7 +34,7 @@ const authStore = useAuthStore();
         </RouterLink>
       </nav>
 
-      <div class="p-4 border-t border-secondary">
+      <div class="p-4 shrink-0 border-t border-secondary">
         <RouterLink to="/" class="w-full flex items-center justify-center gap-2 px-4 py-3 text-gray-600 hover:bg-secondary hover:text-primary rounded-xl font-bold transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
           На головну
@@ -42,7 +42,7 @@ const authStore = useAuthStore();
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
       <header class="h-20 bg-white border-b border-secondary flex items-center justify-between px-8 shrink-0">
         <h2 class="text-xl font-bold text-text">Панель керування</h2>
         <div class="flex items-center gap-4">
@@ -55,7 +55,7 @@ const authStore = useAuthStore();
         </div>
       </header>
 
-      <div class="flex-1 overflow-auto p-8">
+      <div class="flex-1 overflow-y-auto p-8 relative">
         <RouterView />
       </div>
     </main>

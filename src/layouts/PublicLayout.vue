@@ -55,9 +55,9 @@ const authStore = useAuthStore();
     <main class="flex-grow">
       <RouterView />
     </main>
-
+<!--додати посилання на соцмережі та політика конфіденційності і договір публічної оферти-->
     <footer class="bg-white border-t border-secondary py-8 mt-12 text-center text-gray-400 text-sm">
-      <p>© 2026 QuestRoom. Дипломний проєкт.</p>
+      <p>© 2026 OneaRoom. Дипломний проєкт.</p>
     </footer>
 
   </div>

@@ -40,13 +40,13 @@ const statusClasses = {
   pending: 'bg-yellow-100 text-yellow-700',
   confirmed: 'bg-green-100 text-green-700',
   cancelled: 'bg-red-100 text-red-700',
-  completed: 'bg-blue-100 text-blue-700'
+  finished: 'bg-blue-100 text-blue-700' //змінив оскільки забув що finished
 };
 const statusNames = {
   pending: 'Очікує',
   confirmed: 'Підтверджено',
   cancelled: 'Скасовано',
-  completed: 'Завершено'
+  finished: 'Завершено' // тут також змінив
 };
 
 onMounted(() => {
@@ -84,7 +84,9 @@ onMounted(() => {
             </td>
             <td class="p-4">
               <div class="font-bold text-text">{{ booking.user?.name || 'ID: ' + booking.user_id }}</div>
-              <div class="text-xs text-gray-400 mt-1">{{ booking.user?.email || '—' }}</div>
+              <!-- змінив щоб правильно відображалась пошта ну і додав номер телефону -->
+              <div class="text-xs text-primary font-bold mt-1">{{ booking.guest_phone || 'Телефон не вказано' }}</div>
+              <div class="text-xs text-gray-400 mt-0.5">{{ booking.guest_email || booking.user?.email || 'Email не вказано' }}</div>
             </td>
             <td class="p-4">
               <div class="font-bold text-text">{{ booking.room?.name || 'ID: ' + booking.room_id }}</div>
