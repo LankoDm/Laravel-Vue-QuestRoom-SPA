@@ -14,11 +14,26 @@ const authStore = useAuthStore();
         <RouterLink :to="{ name: 'home' }" class="text-2xl font-black text-primary tracking-tight">
           Onea<span class="text-text">Room</span>
         </RouterLink>
-
+<!-- зміна для вкладок про нас та контакти -->
         <nav class="hidden md:flex space-x-8 font-semibold text-gray-500">
-          <RouterLink :to="{ name: 'home' }" class="hover:text-primary transition-colors">Каталог</RouterLink>
-          <a href="#" class="hover:text-primary transition-colors">Про нас</a>
-          <a href="#" class="hover:text-primary transition-colors">Контакти</a>
+          <RouterLink
+              :to="{ name: 'home' }"
+              exact-active-class="text-primary"
+              class="hover:text-primary transition-colors cursor-pointer">
+            Каталог
+          </RouterLink>
+          <RouterLink
+              :to="{ name: 'about' }"
+              exact-active-class="text-primary"
+              class="hover:text-primary transition-colors cursor-pointer">
+            Про нас
+          </RouterLink>
+          <RouterLink
+              :to="{ name: 'contacts' }"
+              exact-active-class="text-primary"
+              class="hover:text-primary transition-colors cursor-pointer">
+            Контакти
+          </RouterLink>
         </nav>
 
         <div class="flex items-center gap-4">

@@ -15,6 +15,8 @@ import ManagerLayout from '../layouts/ManagerLayout.vue';
 import ManagerBookingsView from '../views/Manager/ManagerBookingsView.vue';
 import ManagerReviewsView from "@/views/Manager/ManagerReviewsView.vue";
 import ProfileView from "@/views/Public/ProfileView.vue";
+import AboutView from "@/views/Public/AboutView.vue";
+import ContactView from "@/views/Public/ContactView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -33,6 +35,8 @@ const router = createRouter({
           component: ProfileView,
           meta: { requiresAuth: true }
         },
+        { path: 'about', name: 'about', component: AboutView },
+        { path: 'contacts', name: 'contacts', component: ContactView },
       ]
     },
     {
