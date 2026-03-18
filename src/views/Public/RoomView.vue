@@ -222,8 +222,14 @@ const submitBooking = async () => {
       payment_method: bookingForm.value.payment_method,
       hold_token: holdToken.value
     };
-    await axios.post('http://localhost:8080/api/bookings', payload);
+    const response = await axios.post('http://localhost:8080/api/bookings', payload);
+    const createdBooking = response.data; //дістаємо об'єкт створеної броні
     clearInterval(timerInterval.value);
+    if (bookingForm.value.payment_method === 'card') {
+      const paymentResponse = await axios.post(`http://localhost:8080/api/bookings/${createdBooking.id}/pay`);// відправляємо запит на генерацію платіжного посилання Stripe
+      window.location.href = paymentResponse.data.url;
+      return;
+    }
     isModalOpen.value = false;
     selectedSlot.value = null;
     alert('Бронювання успішно створено! Очікуйте дзвінка менеджера.');
