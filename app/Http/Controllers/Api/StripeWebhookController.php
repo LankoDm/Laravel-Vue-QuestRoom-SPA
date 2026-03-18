@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 use Stripe\Webhook;
 use Stripe\Exception\SignatureVerificationException;
 use UnexpectedValueException;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BookingConfirmed;
 
 class StripeWebhookController extends Controller
 {
@@ -43,6 +45,10 @@ class StripeWebhookController extends Controller
                     $booking = Booking::findOrFail($bookingId);
                     if ($booking) {
                         $booking->update(['status' => 'confirmed']);
+                        $customerEmail = $booking->guest_email ?? $booking->user?->email;
+                        if ($customerEmail) {
+                            Mail::to($customerEmail)->send(new BookingConfirmed($booking));
+                        }
                     }
 
                 }
