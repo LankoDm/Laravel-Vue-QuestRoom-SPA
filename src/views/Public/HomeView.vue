@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
+const currentPage = ref(1);
+const lastPage = ref(1);
 const rooms = ref([]);
 const isLoading = ref(true);
 const router = useRouter();
@@ -14,11 +16,11 @@ const filters = ref({
   sort: ''
 });
 let searchTimeout = null;
-const fetchRooms = async () => {
+const fetchRooms = async (page = 1) => {
   isLoading.value = true;
   try {
-    //формую об'єкт параметрів для запиту
-    const params = {};
+    //формую об'єкт параметрів для запиту і додаємо сторінку
+    const params = { page };
     //перевірки щоб додавати тільки ті фільтри, які користувач заповнив
     if (filters.value.search) params.search = filters.value.search;
     if (filters.value.difficulty) params.difficulty = filters.value.difficulty;
@@ -26,24 +28,39 @@ const fetchRooms = async () => {
     if (filters.value.sort) params.sort = filters.value.sort;
     //запит с параметрами
     const response = await axios.get('http://localhost:8080/api/rooms', { params });
-    rooms.value = response.data.data || response.data || [];
+    if (response.data && response.data.data) {
+      rooms.value = response.data.data;
+      currentPage.value = response.data.current_page;
+      lastPage.value = response.data.last_page;
+    } else {
+      rooms.value = response.data || [];
+      currentPage.value = 1;
+      lastPage.value = 1;
+    }
   } catch (error) {
     console.error('Помилка завантаження даних:', error);
   } finally {
     isLoading.value = false;
   }
 };
+const changePage = (page) => {
+  if (page >= 1 && page <= lastPage.value) {
+    fetchRooms(page);
+    // Прокручуємо екран трохи вгору до списку квестів
+    window.scrollTo({ top: 400, behavior: 'smooth' });
+  }
+};
 //функція яка викликається, коли людина натискає клавішу в полі пошуку
 const onInput = () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    fetchRooms();
+    fetchRooms(1);
   }, 500);
 };
 //функція для очищення всіх полів і для завантаження повного списку кімнат
 const resetFilters = () => {
   filters.value = { search: '', difficulty: '', players_count: '', sort: '' };
-  fetchRooms();
+  fetchRooms(1);
 };
 const openRoom = (slug) => {
   router.push({ name: 'room.show', params: { slug: slug } });
@@ -105,7 +122,7 @@ onMounted(() => {
           <div class="lg:col-span-1">
             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Складність</label>
             <div class="relative">
-              <select v-model="filters.difficulty" @change="fetchRooms"
+              <select v-model="filters.difficulty" @change="fetchRooms(1)"
                       class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-gray-50 appearance-none font-medium cursor-pointer">
                 <option value="">Всі складності</option>
                 <option value="easy">Легкий</option>
@@ -122,7 +139,7 @@ onMounted(() => {
           <div class="lg:col-span-1">
             <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Сортування</label>
             <div class="relative">
-              <select v-model="filters.sort" @change="fetchRooms"
+              <select v-model="filters.sort" @change="fetchRooms(1)"
                       class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-gray-50 appearance-none font-medium cursor-pointer">
                 <option value="">Нові</option>
                 <option value="rating_desc">Рейтинг (Високий)</option>
@@ -208,7 +225,30 @@ onMounted(() => {
             </p>
           </div>
         </div>
-
+      </div>
+      <div v-if="lastPage > 1" class="mt-12 flex justify-center items-center gap-2">
+        <button
+            @click="changePage(currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-4 py-2 rounded-xl font-bold transition-all border"
+            :class="currentPage === 1 ? 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:border-primary hover:bg-primary/5 cursor-pointer'">
+          Назад
+        </button>
+        <button
+            v-for="page in lastPage"
+            :key="page"
+            @click="changePage(page)"
+            class="w-10 h-10 rounded-xl font-bold transition-all flex items-center justify-center cursor-pointer border"
+            :class="page === currentPage ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-600 border-secondary hover:border-primary hover:text-primary'">
+          {{ page }}
+        </button>
+        <button
+            @click="changePage(currentPage + 1)"
+            :disabled="currentPage === lastPage"
+            class="px-4 py-2 rounded-xl font-bold transition-all border"
+            :class="currentPage === lastPage ? 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:border-primary hover:bg-primary/5 cursor-pointer'">
+          Вперед
+        </button>
       </div>
     </div>
   </div>
