@@ -19,6 +19,7 @@ import AboutView from "@/views/Public/AboutView.vue";
 import ContactView from "@/views/Public/ContactView.vue";
 import SuccessView from "@/views/Public/SuccessView.vue";
 import CancelView from "@/views/Public/CancelView.vue";
+import AuthCallbackView from "@/views/Public/AuthCallbackView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,6 +32,7 @@ const router = createRouter({
         { path: '/:slug', name: 'room.show', component: RoomView },
         { path: 'login', name: 'login', component: LoginView },
         { path: 'register', name: 'register', component: RegisterView },
+        { path: 'auth/callback', name: 'auth.callback', component: AuthCallbackView },
         {
           path: 'profile',
           name: 'profile',
