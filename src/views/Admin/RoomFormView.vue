@@ -15,6 +15,9 @@ const form = ref({
   slug: '',
   description: '',
   difficulty: 'medium',
+  age: '12+',
+  hint_phrase: '',
+  genre: '',
   min_players: 2,
   max_players: 4,
   weekday_price: null,
@@ -41,6 +44,9 @@ const fetchRoom = async () => {
       slug: data.slug,
       description: data.description,
       difficulty: data.difficulty,
+      age: data.age || '12+',
+      genre: data.genre || '',
+      hint_phrase: data.hint_phrase || '',
       min_players: data.min_players,
       max_players: data.max_players,
       duration_minutes: data.duration_minutes,
@@ -68,6 +74,9 @@ const saveRoom = async () => {
     formData.append('slug', form.value.slug);
     formData.append('description', form.value.description);
     formData.append('difficulty', form.value.difficulty);
+    formData.append('age', form.value.age);
+    formData.append('genre', form.value.genre || '');
+    formData.append('hint_phrase', form.value.hint_phrase || '');
     formData.append('min_players', form.value.min_players);
     formData.append('max_players', form.value.max_players);
     formData.append('duration_minutes', form.value.duration_minutes);
@@ -155,6 +164,13 @@ onMounted(() => {
             <span v-if="validationErrors.description" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.description[0] }}</span>
           </div>
           <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Секретна фраза-підказка</label>
+            <input v-model="form.hint_phrase" type="text" placeholder="Наприклад: 'Ключ знаходиться під килимком'"
+                   class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
+                   :class="validationErrors.hint_phrase ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-200' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
+            <span v-if="validationErrors.hint_phrase" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.hint_phrase[0] }}</span>
+          </div>
+          <div>
             <label class="block text-sm font-bold text-gray-700 mb-2">Зображення (Обкладинка)</label>
             <input type="file" @change="handleImageUpload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-purple-500 cursor-pointer mb-4"/>
             <span v-if="validationErrors.image_path" class="text-xs text-red-500 font-bold mt-1 mb-2 block">{{ validationErrors.image_path[0] }}</span>
@@ -176,6 +192,20 @@ onMounted(() => {
               <option value="ultra hard">Дуже складно (Ultra Hard)</option>
             </select>
           </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Мінімальний вік *</label>
+            <select v-model="form.age" required
+                    class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
+                    :class="validationErrors.age ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-200' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
+              <option value="0+">Від 0 років (0+)</option>
+              <option value="8+">Від 8 років (8+)</option>
+              <option value="10+">Від 10 років (10+)</option>
+              <option value="12+">Від 12 років (12+)</option>
+              <option value="16+">Від 16 років (16+)</option>
+              <option value="18+">Тільки для дорослих (18+)</option>
+            </select>
+            <span v-if="validationErrors.age" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.age[0] }}</span>
+          </div>
           <div class="flex gap-4">
             <div class="flex-1">
               <label class="block text-sm font-bold text-gray-700 mb-2">Мін.</label>
@@ -189,6 +219,20 @@ onMounted(() => {
                      class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
                      :class="validationErrors.max_players ? 'border-red-500 bg-red-50' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
             </div>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Жанр квесту</label>
+            <select v-model="form.genre"
+                    class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
+                    :class="validationErrors.genre ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-200' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
+              <option value="">Без жанру</option>
+              <option value="horror">Жахи</option>
+              <option value="detective">Детектив</option>
+              <option value="action">Екшн</option>
+              <option value="mystic">Містика</option>
+              <option value="adventure">Пригоди</option>
+            </select>
+            <span v-if="validationErrors.genre" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.genre[0] }}</span>
           </div>
           <span v-if="validationErrors.min_players || validationErrors.max_players" class="text-xs text-red-500 font-bold block">Перевірте кількість гравців</span>
           <div>
