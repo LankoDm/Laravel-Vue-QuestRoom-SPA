@@ -213,6 +213,15 @@ onMounted(fetchMyBookings);
             <span class="text-gray-500">Сума</span>
             <span class="font-black text-xl">{{ formatPrice(selectedBooking.total_price) }} ₴</span>
           </div>
+          <div v-if="selectedBooking.ticket_url" class="pt-4 mt-2 border-t border-gray-100">
+            <a :href="selectedBooking.ticket_url" target="_blank"
+               class="w-full bg-primary hover:bg-purple-600 text-white font-bold py-3 rounded-xl transition-all shadow-md flex justify-center items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              Завантажити квиток (PDF)
+            </a>
+          </div>
         </div>
       </div>
     </div>
