@@ -26,11 +26,17 @@ class BookingRequest extends FormRequest
             'start_time' => 'required|date_format:Y-m-d H:i:s|after:now',
             'players_count' => 'required|integer|min:1',
             'guest_name' => 'required|string|max:255',
-            'guest_phone' => 'required|string|max:20',
+            'guest_phone' => ['required', 'string', 'regex:/^\+380 \(\d{2}\) \d{3}-\d{2}-\d{2}$/'],
             'guest_email' => 'nullable|email|max:255',
             'comment' => 'nullable|string',
             'payment_method' => 'required|in:cash,card,paypal',
             'total_price' => 'required|integer',
+        ];
+    }
+    public function messages(): array
+    {
+        return [
+            'guest_phone.regex' => 'Номер телефону має бути у форматі +380 (XX) XXX-XX-XX',
         ];
     }
 }
