@@ -63,14 +63,21 @@ class AuthController extends Controller
     {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
-            $user = User::updateOrCreate(
-                ['email' => $googleUser->getEmail()],
-                [
+            $user = User::where('email', $googleUser->getEmail())->first();
+            if ($user) {
+                if (!$user->google_id) {
+                    $user->update([
+                        'google_id' => $googleUser->getId()
+                    ]);
+                }
+            } else {
+                $user = User::create([
                     'name' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
                     'google_id' => $googleUser->getId(),
-                    'password' => $googleUser->getId() ? null : Hash::make(Str::random(24))
-                ]
-            );
+                    'password' => null
+                ]);
+            }
             $token = $user->createToken('auth_token')->plainTextToken;
             $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
             return redirect()->away($frontendUrl . '/auth/callback?token=' . $token);

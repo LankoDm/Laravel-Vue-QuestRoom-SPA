@@ -37,7 +37,7 @@
             </div>
             <div class="info-row">
                 <span class="label">Дата та час:</span>
-                <span class="value">{{ Carbon::parse($booking->start_time)->format('d.m.Y о H:i') }}</span>
+                <span class="value">{{ Carbon\Carbon::parse($booking->start_time)->format('d.m.Y о H:i') }}</span>
             </div>
             <div class="info-row">
                 <span class="label">Команда:</span>
