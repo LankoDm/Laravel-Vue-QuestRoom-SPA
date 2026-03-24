@@ -14,6 +14,7 @@ use App\Events\BookingCreated;
 use App\Jobs\FinishBookingJob;
 use Illuminate\Support\Facades\Cache;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\URL;
 
 class BookingController extends Controller
 {
@@ -94,6 +95,9 @@ class BookingController extends Controller
                 'message' => 'Доступ заборонено. Ви не можете дивитися чужі бронювання.'
             ], 403);
         }
+        if (in_array($booking->status, ['confirmed', 'finished'])) {
+            $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
+        }
         return response()->json($booking);
     }
 
@@ -139,7 +143,13 @@ class BookingController extends Controller
         $bookings = Booking::with('room:id,name,image_path,slug')
             ->where('user_id', $request->user()->id)
             ->orderBy('start_time', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($booking) {
+                if (in_array($booking->status, ['confirmed', 'finished'])) {
+                    $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
+                }
+                return $booking;
+            });;
 
         return response()->json($bookings);
     }
