@@ -24,6 +24,8 @@ const selectedSlot = ref(null);
 const selectedPlayers = ref(null);
 const isModalOpen = ref(false);
 const isSubmitting = ref(false);
+const validationErrors = ref({});
+const errorMessage = ref('');
 const timeLeft = ref(600);
 const timerInterval = ref(null);
 const bookingForm = ref({
@@ -42,6 +44,19 @@ watch(() => authStore.user, (user) => {
 
 const formatPrice = (kopecks) => {
   return kopecks ? kopecks / 100 : 0;
+};
+const handlePhoneInput = (event) => {
+  let input = event.target.value.replace(/\D/g, '');
+  if (!input.startsWith('380')) {
+    input = '380' + input.replace(/^380/, '');
+  }
+  input = input.substring(0, 12);
+  let formatted = '+380';
+  if (input.length > 3) formatted += ' (' + input.substring(3, 5);
+  if (input.length > 5) formatted += ') ' + input.substring(5, 8);
+  if (input.length > 8) formatted += '-' + input.substring(8, 10);
+  if (input.length > 10) formatted += '-' + input.substring(10, 12);
+  bookingForm.value.phone = formatted;
 };
 
 const fetchRoom = async () => {
@@ -205,9 +220,13 @@ const openBookingModal = async () => {
 const closeBookingModal = () => {
   clearInterval(timerInterval.value);
   isModalOpen.value = false;
+  validationErrors.value = {};
+  errorMessage.value = '';
 };
 const submitBooking = async () => {
   isSubmitting.value = true;
+  validationErrors.value = {};
+  errorMessage.value = '';
   try {
     const payload = {
       room_id: room.value.id,
@@ -223,10 +242,10 @@ const submitBooking = async () => {
       hold_token: holdToken.value
     };
     const response = await axios.post('http://localhost:8080/api/bookings', payload);
-    const createdBooking = response.data; //дістаємо об'єкт створеної броні
+    const createdBooking = response.data;
     clearInterval(timerInterval.value);
     if (bookingForm.value.payment_method === 'card') {
-      const paymentResponse = await axios.post(`http://localhost:8080/api/bookings/${createdBooking.id}/pay`);// відправляємо запит на генерацію платіжного посилання Stripe
+      const paymentResponse = await axios.post(`http://localhost:8080/api/bookings/${createdBooking.id}/pay`);
       window.location.href = paymentResponse.data.url;
       return;
     }
@@ -235,10 +254,90 @@ const submitBooking = async () => {
     alert('Бронювання успішно створено! Очікуйте дзвінка менеджера.');
   } catch (error) {
     console.error('Помилка бронювання:', error);
-    alert('Помилка при створенні бронювання. Спробуйте пізніше.');
+    if (error.response?.status === 422) {
+      validationErrors.value = error.response.data.errors;
+      errorMessage.value = 'Будь ласка, перевірте правильність заповнення форми.';
+    } else {
+      errorMessage.value = 'Помилка при створенні бронювання. Спробуйте пізніше.';
+    }
   } finally {
     isSubmitting.value = false;
   }
+};
+const gameStage = ref(0);
+const currentLevel = ref(1);
+const markerPos = ref(0);
+const targetStart = ref(40);
+const targetWidth = ref(20);
+const failedHack = ref(false);
+const successHit = ref(false);
+const displayedHint = ref('************************');
+let speed = 0.4;
+let dir = 1;
+let reqId = null;
+let lastTimestamp = 0;
+const startMiniGame = () => {
+  gameStage.value = 1;
+  currentLevel.value = 1;
+  initLevel(1);
+  lastTimestamp = 0;
+  cancelAnimationFrame(reqId);
+  reqId = requestAnimationFrame(gameLoop);
+};
+const initLevel = (lvl) => {
+  targetWidth.value = 32 - (lvl * 6);
+  targetStart.value = 10 + Math.random() * (80 - targetWidth.value);
+  speed = 0.3 + (lvl * 0.3);
+};
+const gameLoop = (timestamp) => {
+  if (gameStage.value !== 1) return;
+  if (!lastTimestamp) lastTimestamp = timestamp;
+  const deltaTime = timestamp - lastTimestamp;
+  lastTimestamp = timestamp;
+  markerPos.value += (speed * deltaTime * 0.1) * dir;
+  if (markerPos.value >= 100) { markerPos.value = 100; dir = -1; }
+  if (markerPos.value <= 0) { markerPos.value = 0; dir = 1; }
+  reqId = requestAnimationFrame(gameLoop);
+};
+const tryHack = () => {
+  const tolerance = 2.5;
+  const isHit = markerPos.value >= (targetStart.value - tolerance) &&
+      markerPos.value <= (targetStart.value + targetWidth.value + tolerance);
+  if (isHit) {
+    successHit.value = true;
+    setTimeout(() => { successHit.value = false; }, 200);
+    if (currentLevel.value < 3) {
+      currentLevel.value++;
+      initLevel(currentLevel.value);
+    } else {
+      gameStage.value = 2;
+      cancelAnimationFrame(reqId);
+      triggerDecoder();
+    }
+  } else {
+    failedHack.value = true;
+    setTimeout(() => { failedHack.value = false; }, 300);
+    currentLevel.value = 1;
+    initLevel(1);
+  }
+};
+const triggerDecoder = () => {
+  const targetText = room.value?.hint_phrase || 'Таємниця відсутня';
+  const characters = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ0123456789@#$%&*!?><';
+  let iterations = 0;
+  const interval = setInterval(() => {
+    displayedHint.value = targetText.split('').map((char, index) => {
+      if (index < iterations) return char;
+      if (char === ' ') return ' ';
+      return characters[Math.floor(Math.random() * characters.length)];
+    }).join('');
+    if (iterations >= targetText.length) {
+      clearInterval(interval);
+      gameStage.value = 3;
+      displayedHint.value = targetText;
+    }
+    iterations += 1 / 3;
+  }, 40);
 };
 
 onMounted(() => {
@@ -299,6 +398,61 @@ onUnmounted(() => {
           <div class="prose max-w-none text-text leading-relaxed">
             <h2 class="text-2xl font-bold mb-4">Про квест</h2>
             <p class="whitespace-pre-line">{{ room.description }}</p>
+          </div>
+          <div v-if="room.hint_phrase" class="bg-gray-50 p-8 rounded-3xl mt-12 shadow-sm border transition-colors duration-300 relative overflow-hidden"
+               :class="failedHack ? 'bg-red-50 border-red-200' : 'border-secondary'">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="text-center mb-8 relative z-10">
+              <h2 class="text-2xl font-black text-text mb-2 flex items-center justify-center gap-2">
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                Секретний смарт-замок
+              </h2>
+              <p class="text-gray-500 font-medium text-sm md:text-base">
+                Зупиніть сканер у зеленій зоні, щоб розблокувати приховану підказку.
+              </p>
+            </div>
+            <div class="flex flex-col items-center gap-6 relative z-10 w-full max-w-xl mx-auto">
+              <div v-if="gameStage === 0" class="py-6">
+                <button @click="startMiniGame" class="bg-primary hover:bg-purple-600 text-white font-black uppercase tracking-widest py-4 px-12 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-1">
+                  Розблокувати
+                </button>
+              </div>
+              <div v-else-if="gameStage === 1" class="w-full space-y-8 animate-fade-in">
+                <div class="flex justify-between items-center px-2">
+                  <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Рівень захисту:</span>
+                  <div class="flex gap-2">
+                    <div v-for="i in 3" :key="i" class="w-8 h-2 rounded-full transition-colors duration-300"
+                         :class="i < currentLevel ? 'bg-green-400 shadow-sm' : i === currentLevel ? 'bg-primary animate-pulse' : 'bg-gray-200'">
+                    </div>
+                  </div>
+                </div>
+                <div class="relative w-full h-12 bg-white rounded-xl overflow-hidden border-2 transition-colors duration-200 shadow-inner"
+                     :class="failedHack ? 'border-red-300' : successHit ? 'border-green-400' : 'border-secondary'">
+                  <div class="absolute h-full bg-green-100 border-x-2 border-green-400 transition-all duration-300"
+                       :style="{ left: `${targetStart}%`, width: `${targetWidth}%` }">
+                  </div>
+                  <div class="absolute h-full w-2 bg-primary shadow-[0_0_8px_rgba(168,85,247,0.6)] z-10 -ml-1 transition-opacity"
+                       :class="{'opacity-0': successHit}"
+                       :style="{ left: `${markerPos}%` }">
+                  </div>
+                  <div v-if="successHit" class="absolute inset-0 bg-green-50 animate-pulse"></div>
+                </div>
+                <button @click="tryHack" class="w-full bg-primary hover:bg-purple-600 text-white font-black text-xl tracking-widest py-5 rounded-xl transition-all active:scale-95 shadow-md">
+                  ЗУПИНИТИ
+                </button>
+              </div>
+              <div v-else class="w-full bg-white p-8 rounded-3xl border border-secondary min-h-[140px] flex flex-col items-center justify-center relative overflow-hidden shadow-sm animate-fade-in">
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent opacity-50 animate-scan pointer-events-none"></div>
+                <p class="font-mono text-xl md:text-2xl break-words text-center leading-relaxed tracking-wider transition-colors duration-300 relative z-10"
+                   :class="gameStage === 3 ? 'text-primary font-black drop-shadow-sm' : 'text-gray-400 font-medium'">
+                  {{ displayedHint }}
+                </p>
+                <div v-if="gameStage === 3" class="mt-4 bg-green-50 text-green-600 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-lg animate-fade-in flex items-center gap-2 border border-green-200">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                  Підказку розблоковано
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="lg:col-span-1" ref="bookingPanel">
@@ -462,7 +616,12 @@ onUnmounted(() => {
             </div>
             <div class="flex justify-between items-center">
               <span class="text-gray-500">Гравців:</span>
-              <span>{{ selectedPlayers }} чол.</span>
+              <select v-model="selectedPlayers"
+                      class="bg-white border border-secondary rounded-lg px-3 py-1.5 font-bold text-text outline-none focus:ring-2 focus:ring-primary cursor-pointer shadow-sm">
+                <option v-for="n in (room.max_players - room.min_players + 1)" :key="n" :value="room.min_players + n - 1">
+                  {{ room.min_players + n - 1 }} чол.
+                </option>
+              </select>
             </div>
             <div class="flex justify-between items-center pt-3 border-t border-secondary border-dashed">
               <span class="text-gray-500">До сплати:</span>
@@ -471,25 +630,43 @@ onUnmounted(() => {
           </div>
 
           <form @submit.prevent="submitBooking" class="space-y-4">
+
+            <div v-if="errorMessage" class="p-3 bg-red-50 text-red-600 rounded-xl border border-red-200 font-bold flex items-start gap-2 shadow-sm text-sm">
+              <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>{{ errorMessage }}</span>
+            </div>
+
             <div>
               <label class="block text-sm font-bold text-gray-700 mb-2">Ваше ім'я *</label>
               <input v-model="bookingForm.name" type="text" required placeholder="Олександр"
-                     class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors bg-gray-50">
+                     class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors"
+                     :class="validationErrors.guest_name ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
+              <span v-if="validationErrors.guest_name" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_name[0] }}</span>
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700 mb-2">Телефон *</label>
-              <input v-model="bookingForm.phone" type="tel" required placeholder="+38 (099) 000-00-00"
-                     class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors bg-gray-50">
+              <input v-model="bookingForm.phone"
+                     @input="handlePhoneInput"
+                     @focus="bookingForm.phone = bookingForm.phone || '+380 '"
+                     type="tel"
+                     required
+                     placeholder="+380 (99) 000-00-00"
+                     maxlength="19"
+                     class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors font-bold tracking-wide"
+                     :class="validationErrors.guest_phone ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
+              <span v-if="validationErrors.guest_phone" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_phone[0] }}</span>
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700 mb-2">Email (для чеку)</label>
               <input v-model="bookingForm.email" type="email" placeholder="email@example.com"
-                     class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors bg-gray-50">
+                     class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors"
+                     :class="validationErrors.guest_email ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
+              <span v-if="validationErrors.guest_email" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_email[0] }}</span>
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700 mb-2">Коментар (необов'язково)</label>
               <textarea v-model="bookingForm.comment" rows="2" placeholder="Наприклад: з нами будуть діти"
-                        class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors bg-gray-50 resize-none"></textarea>
+                        class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-gray-50 resize-none"></textarea>
             </div>
             <div class="pt-2">
               <label class="block text-sm font-bold text-gray-700 mb-3">Спосіб оплати</label>
@@ -528,8 +705,15 @@ onUnmounted(() => {
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #E6E6FA; border-radius: 20px; }
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+.animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+.animate-scan {
+  animation: scan 3s linear infinite;
+}
 </style>
