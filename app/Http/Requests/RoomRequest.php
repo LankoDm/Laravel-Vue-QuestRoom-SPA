@@ -27,11 +27,14 @@ class RoomRequest extends FormRequest
             'name' => [
                 'required',
                 'min:5',
-                'max:255',
+                'max:35',
                 Rule::unique('rooms', 'name')->ignore($roomId)
             ],
             'description' => 'required|min:20',
             'difficulty' => 'required|in:easy,medium,hard,ultra hard',
+            'age' => 'required|string',
+            'hint_phrase' => 'nullable|string|max:255',
+            'genre' => 'nullable|string|max:50',
             'image_path' => [
                 $roomId ? 'nullable' : 'required',
                 'image',

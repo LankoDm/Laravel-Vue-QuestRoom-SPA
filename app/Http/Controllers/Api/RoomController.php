@@ -20,14 +20,26 @@ class RoomController extends Controller
         if(!$request->has('show_all')){
             $query->where('is_active', 1);
         }
-        if($request->has('difficulty')){
-            $query->where('difficulty', $request->difficulty);
+        if($request->has('difficulty') && !empty($request->difficulty)){
+            $query->whereIn('difficulty', (array) $request->difficulty);
         }
         if($request->has('players_count')){
             $query->where('min_players', '<=', $request->players_count)->where('max_players', '>=', $request->players_count);
         }
         if($request->has('search')){
             $query->where('name', 'like', '%'.$request->search.'%');
+        }
+        if ($request->has('age') && !empty($request->age)) {
+            $ages = (array) $request->age;
+            $query->where(function ($q) use ($ages) {
+                foreach ($ages as $ageStr) {
+                    $minAge = (int) str_replace('+', '', $ageStr);
+                    $q->orWhereRaw("CAST(REPLACE(age, '+', '') AS UNSIGNED) >= ?", [$minAge]);
+                }
+            });
+        }
+        if($request->has('genres') && !empty($request->genres)){
+            $query->whereIn('genre', $request->genres);
         }
         if($request->has('sort')){
             switch ($request->sort) {

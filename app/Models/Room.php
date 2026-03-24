@@ -20,6 +20,9 @@ class Room extends Model
         'duration_minutes',
         'is_active',
         'slug',
+        'age',
+        'hint_phrase',
+        'genre',
     ];
 
     protected $cast = [
