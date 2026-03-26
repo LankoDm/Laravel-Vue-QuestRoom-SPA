@@ -1,11 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 
 const bookings = ref([]);
 const isLoading = ref(true);
 const searchQuery = ref('');
-let searchTimeout = null;
 const fetchBookings = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/bookings');
@@ -17,6 +16,24 @@ const fetchBookings = async () => {
     isLoading.value = false;
   }
 };
+const filteredBookings = computed(() => {
+  if (!searchQuery.value) return bookings.value;
+  const query = searchQuery.value.toLowerCase();
+  const queryDigits = query.replace(/\D/g, '');
+  return bookings.value.filter(b => {
+    const idStr = String(b.id);
+    const clientName = (b.guest_name || b.user?.name || '').toLowerCase();
+    const clientEmail = (b.guest_email || b.user?.email || '').toLowerCase();
+    const clientPhoneOriginal = (b.guest_phone || '').toLowerCase();
+    const clientPhoneDigits = clientPhoneOriginal.replace(/\D/g, '');
+    const phoneMatch = clientPhoneOriginal.includes(query) ||
+        (queryDigits.length > 0 && clientPhoneDigits.includes(queryDigits));
+    return idStr.includes(query) ||
+        clientName.includes(query) ||
+        clientEmail.includes(query) ||
+        phoneMatch;
+  });
+});
 const formatPrice = (price) => price ? price / 100 : 0;
 const formatDate = (dateString) => {
   if (!dateString) return '—';
@@ -61,14 +78,14 @@ onMounted(() => {
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
       <h1 class="text-3xl font-black text-text">Управління бронюваннями</h1>
 
-      <div class="relative w-full md:w-72">
-        <input v-model="searchQuery" @input="onSearchInput" type="text" placeholder="Пошук за клієнтом/телефоном..."
-               class="w-full pl-10 pr-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-white font-medium">
+      <div class="relative w-full md:w-80">
+        <input v-model="searchQuery" type="text" placeholder="Пошук (ім'я, телефон, email, ID)..."
+               class="w-full pl-10 pr-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-white font-medium shadow-sm">
         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
       </div>
     </div>
-    <div v-if="isLoading" class="text-center py-12 text-gray-500 animate-pulse">
-      Завантаження списку бронювань
+    <div v-if="isLoading" class="text-center py-12 text-gray-500 animate-pulse font-bold">
+      Завантаження списку бронювань...
     </div>
     <div v-else class="bg-white rounded-3xl shadow-sm border border-secondary overflow-hidden">
       <div class="overflow-x-auto">
@@ -84,15 +101,13 @@ onMounted(() => {
           </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-          <tr v-for="booking in bookings" :key="booking.id" class="hover:bg-gray-50 transition-colors">
-
+          <tr v-for="booking in filteredBookings" :key="booking.id" class="hover:bg-gray-50 transition-colors">
             <td class="p-4 pl-6">
               <div class="font-bold text-text">#{{ booking.id }}</div>
               <div class="text-sm text-primary font-bold mt-1">{{ formatDate(booking.start_time) }}</div>
             </td>
             <td class="p-4">
-              <div class="font-bold text-text">{{ booking.user?.name || 'ID: ' + booking.user_id }}</div>
-              <!-- змінив щоб правильно відображалась пошта ну і додав номер телефону -->
+              <div class="font-bold text-text">{{ booking.guest_name || booking.user?.name || 'Клієнт' }}</div>
               <div class="text-xs text-primary font-bold mt-1">{{ booking.guest_phone || 'Телефон не вказано' }}</div>
               <div class="text-xs text-gray-400 mt-0.5">{{ booking.guest_email || booking.user?.email || 'Email не вказано' }}</div>
             </td>
@@ -103,7 +118,6 @@ onMounted(() => {
               <div class="font-bold text-text">{{ booking.players_count }} гравців</div>
               <div class="text-sm text-gray-500">{{ formatPrice(booking.total_price) }} ₴</div>
             </td>
-
             <td class="p-4">
                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-wide"
                       :class="statusClasses[booking.status] || 'bg-gray-100 text-gray-700'">
@@ -111,18 +125,16 @@ onMounted(() => {
                 </span>
             </td>
             <td class="p-4 text-center">
-              <div class="flex items-center justify-center gap-2">
-                <button @click="deleteBooking(booking.id)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Видалити бронювання повністю">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
-              </div>
+              <button @click="deleteBooking(booking.id)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Видалити">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
             </td>
           </tr>
           </tbody>
         </table>
       </div>
-      <div v-if="bookings.length === 0" class="p-8 text-center text-gray-500">
-        Немає жодного бронювання.
+      <div v-if="filteredBookings.length === 0" class="p-8 text-center text-gray-500 font-medium">
+        За вашим запитом нічого не знайдено.
       </div>
     </div>
   </div>
