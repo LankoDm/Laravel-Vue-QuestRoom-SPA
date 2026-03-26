@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\BookingCreated;
 use App\Models\Booking;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -30,6 +31,7 @@ class FinishBookingJob implements ShouldQueue
         if ($booking && $booking->status === 'confirmed') {
             $booking->status = 'finished';
             $booking->save();
+            broadcast(new BookingCreated($booking));
         }
     }
 }
