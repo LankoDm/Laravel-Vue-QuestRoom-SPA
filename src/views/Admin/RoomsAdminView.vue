@@ -13,6 +13,7 @@ const fetchRooms = async (page = 1) => {
   isLoading.value = true;
   try {
     const params = { page };
+    params.show_all = 1;
     if (searchQuery.value) params.search = searchQuery.value;
 
     const response = await axios.get('http://localhost:8080/api/rooms', { params });
