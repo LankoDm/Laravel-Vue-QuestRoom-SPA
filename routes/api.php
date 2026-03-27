@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RoomController;
@@ -60,12 +61,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
 
-        Route::get('/admin/stats', function () {
-            return response()->json([
-                'total_rooms' => Room::count(),
-                'bookings_today' => Booking::whereDate('start_time', today())->count(),
-                'new_reviews' => Review::where('is_approved', false)->count()
-            ]);
-        });
+        Route::get('/admin/stats', [DashboardController::class, 'stats']);
     });
 });
