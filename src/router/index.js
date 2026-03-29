@@ -3,8 +3,8 @@ import { useAuthStore } from '@/stores/auth';
 import PublicLayout from "../layouts/PublicLayout.vue";
 import HomeView from "../views/Public/HomeView.vue";
 import RoomView from "../views/Public/RoomView.vue";
-import LoginView from "@/views/Public/LoginView.vue";
-import RegisterView from "@/views/Public/RegisterView.vue";
+import LoginView from "@/views/Auth/LoginView.vue";
+import RegisterView from "@/views/Auth/RegisterView.vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import DashboardView from '../views/Admin/DashboardView.vue';
 import RoomsAdminView from '../views/Admin/RoomsAdminView.vue';
@@ -19,7 +19,9 @@ import AboutView from "@/views/Public/AboutView.vue";
 import ContactView from "@/views/Public/ContactView.vue";
 import SuccessView from "@/views/Public/SuccessView.vue";
 import CancelView from "@/views/Public/CancelView.vue";
-import AuthCallbackView from "@/views/Public/AuthCallbackView.vue";
+import AuthCallbackView from "@/views/Auth/AuthCallbackView.vue";
+import ForgotPassword from "@/views/Auth/ForgotPassword.vue";
+import ResetPassword from "@/views/Auth/ResetPassword.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -33,6 +35,8 @@ const router = createRouter({
         { path: 'login', name: 'login', component: LoginView },
         { path: 'register', name: 'register', component: RegisterView },
         { path: 'auth/callback', name: 'auth.callback', component: AuthCallbackView },
+        { path: 'forgot-password', name: 'forgot-password', component: ForgotPassword },
+        { path: 'reset-password', name: 'reset-password', component: ResetPassword },
         {
           path: 'profile',
           name: 'profile',
@@ -92,7 +96,8 @@ router.beforeEach(async (to, from, next) => {
       return next({ name: 'home' });
     }
   }
-  if ((to.name === 'login' || to.name === 'register') && authStore.isAuthenticated) {
+  const guestOnlyRoutes = ['login', 'register', 'forgot-password', 'reset-password'];
+  if (guestOnlyRoutes.includes(to.name) && authStore.isAuthenticated) {
     return next({ name: 'home' });
   }
 

@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/auth.js';
 import axios from 'axios';
 
 const router = useRouter();
@@ -60,7 +60,15 @@ const handleLogin = async () => {
         </div>
 
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">Пароль</label>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-sm font-bold text-gray-700">Пароль</label>
+            <RouterLink
+                :to="{ name: 'forgot-password' }"
+                class="text-sm font-bold text-primary hover:underline transition-all"
+                tabindex="-1">
+              Забули пароль?
+            </RouterLink>
+          </div>
           <input
               v-model="form.password"
               type="password"
