@@ -49,7 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/bookings', [BookingController::class, 'index']);
         Route::patch('/bookings/{id}/confirm', [BookingController::class, 'bookingConfirmation']);
         Route::patch('/bookings/{id}/cancel', [BookingController::class, 'bookingCancellation']);
-
+        Route::patch('/bookings/{id}/finish', [BookingController::class, 'bookingFinish']);
         Route::patch('/reviews/{review}/approve', [ReviewController::class, 'approve']);
         Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
         Route::get('/reviews', [ReviewController::class, 'manageIndex']);

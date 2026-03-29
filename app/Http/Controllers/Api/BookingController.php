@@ -131,6 +131,13 @@ class BookingController extends Controller
         return response()->json(['message' => 'Бронювання скасовано.']);
     }
 
+    public function bookingFinish(string $id)
+    {
+        $booking = Booking::findOrFail($id);
+        $booking->update(['status' => 'finished']);
+        return response()->json(['message' => 'Бронювання успішно завершено.']);
+    }
+
     public function destroy(string $id)
     {
         $booking = Booking::findOrFail($id);
