@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 
 const bookings = ref([]);
+const selectedStatuses = ref(['pending', 'confirmed', 'finished', 'cancelled']);
 const isLoading = ref(true);
 const searchQuery = ref('');
 const fetchBookings = async () => {
@@ -17,23 +18,42 @@ const fetchBookings = async () => {
   }
 };
 const filteredBookings = computed(() => {
-  if (!searchQuery.value) return bookings.value;
-  const query = searchQuery.value.toLowerCase();
-  const queryDigits = query.replace(/\D/g, '');
-  return bookings.value.filter(b => {
-    const idStr = String(b.id);
-    const clientName = (b.guest_name || b.user?.name || '').toLowerCase();
-    const clientEmail = (b.guest_email || b.user?.email || '').toLowerCase();
-    const clientPhoneOriginal = (b.guest_phone || '').toLowerCase();
-    const clientPhoneDigits = clientPhoneOriginal.replace(/\D/g, '');
-    const phoneMatch = clientPhoneOriginal.includes(query) ||
-        (queryDigits.length > 0 && clientPhoneDigits.includes(queryDigits));
-    return idStr.includes(query) ||
-        clientName.includes(query) ||
-        clientEmail.includes(query) ||
-        phoneMatch;
-  });
+  let result = bookings.value.filter(b => selectedStatuses.value.includes(b.status));
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    const queryDigits = query.replace(/\D/g, '');
+    result = result.filter(b => {
+      const idStr = String(b.id);
+      const clientName = (b.guest_name || b.user?.name || '').toLowerCase();
+      const clientEmail = (b.guest_email || b.user?.email || '').toLowerCase();
+      const clientPhoneOriginal = (b.guest_phone || '').toLowerCase();
+      const clientPhoneDigits = clientPhoneOriginal.replace(/\D/g, '');
+      const phoneMatch = clientPhoneOriginal.includes(query) ||
+          (queryDigits.length > 0 && clientPhoneDigits.includes(queryDigits));
+      return idStr.includes(query) ||
+          clientName.includes(query) ||
+          clientEmail.includes(query) ||
+          phoneMatch;
+    });
+  }
+  return result;
 });
+const statusNames = {
+  pending: 'Очікує',
+  confirmed: 'Підтверджено',
+  cancelled: 'Скасовано',
+  finished: 'Завершено'
+};
+const finishBooking = async (id) => {
+  if (!confirm('Позначити це бронювання як завершене?')) return;
+  try {
+    await axios.patch(`http://localhost:8080/api/bookings/${id}/finish`);
+    const b = bookings.value.find(item => item.id === id);
+    if (b) b.status = 'finished';
+  } catch (error) {
+    alert('Не вдалося змінити статус на завершено');
+  }
+};
 const formatPrice = (price) => price ? price / 100 : 0;
 const formatDate = (dateString) => {
   if (!dateString) return '—';
@@ -95,6 +115,29 @@ onMounted(() => {
         </button>
       </div>
     </div>
+    <div class="flex flex-wrap gap-4 mb-6 bg-white p-4 rounded-2xl border border-secondary shadow-sm inline-flex">
+      <span class="text-sm font-bold text-gray-400 uppercase tracking-wider mr-2">Показати:</span>
+
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <input type="checkbox" value="pending" v-model="selectedStatuses" class="w-4 h-4 text-yellow-500 rounded border-gray-300 focus:ring-yellow-500">
+        <span class="text-sm font-bold text-yellow-700">Очікує</span>
+      </label>
+
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <input type="checkbox" value="confirmed" v-model="selectedStatuses" class="w-4 h-4 text-green-500 rounded border-gray-300 focus:ring-green-500">
+        <span class="text-sm font-bold text-green-700">Підтверджено</span>
+      </label>
+
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <input type="checkbox" value="finished" v-model="selectedStatuses" class="w-4 h-4 text-blue-500 rounded border-gray-300 focus:ring-blue-500">
+        <span class="text-sm font-bold text-blue-700">Завершено</span>
+      </label>
+
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <input type="checkbox" value="cancelled" v-model="selectedStatuses" class="w-4 h-4 text-red-500 rounded border-gray-300 focus:ring-red-500">
+        <span class="text-sm font-bold text-red-700">Скасовано</span>
+      </label>
+    </div>
     <div v-if="isLoading" class="py-20 text-center animate-pulse text-gray-400 font-bold">Завантаження</div>
 
     <div v-else class="bg-white rounded-3xl shadow-sm border border-secondary overflow-hidden">
@@ -126,15 +169,18 @@ onMounted(() => {
           </td>
           <td class="p-4">
               <span class="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider" :class="statusClasses[b.status]">
-                {{ b.status }}
+                {{ statusNames[b.status] || b.status }}
               </span>
           </td>
           <td class="p-4 text-center">
             <div class="flex justify-center gap-2">
-              <button v-if="b.status === 'pending'" @click="confirmBooking(b.id)" class="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm">
+              <button v-if="b.status === 'pending'" @click="confirmBooking(b.id)" class="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm" title="Підтвердити">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
               </button>
-              <button v-if="b.status !== 'cancelled' && b.status !== 'finished'" @click="cancelBooking(b.id)" class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm">
+              <button v-if="b.status === 'confirmed'" @click="finishBooking(b.id)" class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Позначити як завершене">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </button>
+              <button v-if="b.status !== 'cancelled' && b.status !== 'finished'" @click="cancelBooking(b.id)" class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm" title="Скасувати">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
             </div>

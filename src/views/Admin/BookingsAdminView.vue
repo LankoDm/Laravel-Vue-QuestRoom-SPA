@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 
 const bookings = ref([]);
+const selectedStatuses = ref(['pending', 'confirmed', 'finished', 'cancelled']);
 const isLoading = ref(true);
 const searchQuery = ref('');
 const fetchBookings = async () => {
@@ -17,22 +18,25 @@ const fetchBookings = async () => {
   }
 };
 const filteredBookings = computed(() => {
-  if (!searchQuery.value) return bookings.value;
-  const query = searchQuery.value.toLowerCase();
-  const queryDigits = query.replace(/\D/g, '');
-  return bookings.value.filter(b => {
-    const idStr = String(b.id);
-    const clientName = (b.guest_name || b.user?.name || '').toLowerCase();
-    const clientEmail = (b.guest_email || b.user?.email || '').toLowerCase();
-    const clientPhoneOriginal = (b.guest_phone || '').toLowerCase();
-    const clientPhoneDigits = clientPhoneOriginal.replace(/\D/g, '');
-    const phoneMatch = clientPhoneOriginal.includes(query) ||
-        (queryDigits.length > 0 && clientPhoneDigits.includes(queryDigits));
-    return idStr.includes(query) ||
-        clientName.includes(query) ||
-        clientEmail.includes(query) ||
-        phoneMatch;
-  });
+  let result = bookings.value.filter(b => selectedStatuses.value.includes(b.status));
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    const queryDigits = query.replace(/\D/g, '');
+    result = result.filter(b => {
+      const idStr = String(b.id);
+      const clientName = (b.guest_name || b.user?.name || '').toLowerCase();
+      const clientEmail = (b.guest_email || b.user?.email || '').toLowerCase();
+      const clientPhoneOriginal = (b.guest_phone || '').toLowerCase();
+      const clientPhoneDigits = clientPhoneOriginal.replace(/\D/g, '');
+      const phoneMatch = clientPhoneOriginal.includes(query) ||
+          (queryDigits.length > 0 && clientPhoneDigits.includes(queryDigits));
+      return idStr.includes(query) ||
+          clientName.includes(query) ||
+          clientEmail.includes(query) ||
+          phoneMatch;
+    });
+  }
+  return result;
 });
 const formatPrice = (price) => price ? price / 100 : 0;
 const formatDate = (dateString) => {
@@ -83,6 +87,29 @@ onMounted(() => {
                class="w-full pl-10 pr-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-white font-medium shadow-sm">
         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
       </div>
+    </div>
+    <div class="flex flex-wrap gap-4 mb-6 bg-white p-4 rounded-2xl border border-secondary shadow-sm inline-flex">
+      <span class="text-sm font-bold text-gray-400 uppercase tracking-wider mr-2">Показати:</span>
+
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <input type="checkbox" value="pending" v-model="selectedStatuses" class="w-4 h-4 text-yellow-500 rounded border-gray-300 focus:ring-yellow-500">
+        <span class="text-sm font-bold text-yellow-700">Очікує</span>
+      </label>
+
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <input type="checkbox" value="confirmed" v-model="selectedStatuses" class="w-4 h-4 text-green-500 rounded border-gray-300 focus:ring-green-500">
+        <span class="text-sm font-bold text-green-700">Підтверджено</span>
+      </label>
+
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <input type="checkbox" value="finished" v-model="selectedStatuses" class="w-4 h-4 text-blue-500 rounded border-gray-300 focus:ring-blue-500">
+        <span class="text-sm font-bold text-blue-700">Завершено</span>
+      </label>
+
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <input type="checkbox" value="cancelled" v-model="selectedStatuses" class="w-4 h-4 text-red-500 rounded border-gray-300 focus:ring-red-500">
+        <span class="text-sm font-bold text-red-700">Скасовано</span>
+      </label>
     </div>
     <div v-if="isLoading" class="text-center py-12 text-gray-500 animate-pulse font-bold">
       Завантаження списку бронювань...
