@@ -34,6 +34,8 @@ Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkE
 Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::put('/user/profile', [UserController::class, 'updateProfile']);
+    Route::put('/user/password', [UserController::class, 'updatePassword']);
     Route::get('/user/bookings', [BookingController::class, 'myBookings']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
 

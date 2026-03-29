@@ -22,7 +22,15 @@ class UserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role' => 'required|in:admin,manager,user'
+            'role' => 'sometimes|required|in:admin,manager,user',
+            'name' => 'sometimes|required|string|max:255',
+            'phone' => ['nullable', 'string', 'regex:/^\+380 \(\d{2}\) \d{3}-\d{2}-\d{2}$/'],
+        ];
+    }
+    public function messages(): array
+    {
+        return [
+            'phone.regex' => 'Номер телефону введено не повністю.',
         ];
     }
 }
