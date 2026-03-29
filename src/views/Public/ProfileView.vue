@@ -8,6 +8,55 @@ const bookings = ref([]);
 const isLoading = ref(true);
 const selectedBooking = ref(null);
 const isModalOpen = ref(false);
+const isEditProfileModalOpen = ref(false);
+const isChangePasswordModalOpen = ref(false);
+const profileForm = ref({ name: '', phone: '' });
+const passwordForm = ref({ current_password: '', password: '', password_confirmation: '' });
+const openEditProfileModal = () => {
+  profileForm.value.name = authStore.user?.name || '';
+  profileForm.value.phone = authStore.user?.phone || '';
+  isEditProfileModalOpen.value = true;
+};
+const submitProfileUpdate = async () => {
+  if (profileForm.value.phone === '+380 ' || profileForm.value.phone === '+380') {
+    profileForm.value.phone = '';
+  }
+  if (profileForm.value.phone && profileForm.value.phone.length < 19) {
+    alert('Будь ласка, введіть повний номер телефону (10 цифр).');
+    return;
+  }
+  try {
+    const response = await axios.put('http://localhost:8080/api/user/profile', profileForm.value);
+    await authStore.fetchUser();
+    alert('Профіль успішно оновлено!');
+    isEditProfileModalOpen.value = false;
+  } catch (error) {
+    alert(error.response?.data?.message || 'Помилка оновлення профілю');
+  }
+};
+const submitPasswordUpdate = async () => {
+  try {
+    await axios.put('http://localhost:8080/api/user/password', passwordForm.value);
+    alert('Пароль успішно змінено!');
+    isChangePasswordModalOpen.value = false;
+    passwordForm.value = { current_password: '', password: '', password_confirmation: '' };
+  } catch (error) {
+    alert(error.response?.data?.message || 'Помилка зміни пароля. Перевірте правильність поточного пароля.');
+  }
+};
+const handlePhoneInput = (event) => {
+  let input = event.target.value.replace(/\D/g, '');
+  if (!input.startsWith('380')) {
+    input = '380' + input.replace(/^380/, '');
+  }
+  input = input.substring(0, 12);
+  let formatted = '+380';
+  if (input.length > 3) formatted += ' (' + input.substring(3, 5);
+  if (input.length > 5) formatted += ') ' + input.substring(5, 8);
+  if (input.length > 8) formatted += '-' + input.substring(8, 10);
+  if (input.length > 10) formatted += '-' + input.substring(10, 12);
+  profileForm.value.phone = formatted;
+};
 const fetchMyBookings = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/user/bookings');
@@ -98,6 +147,7 @@ onMounted(fetchMyBookings);
           </div>
           <h1 class="text-2xl font-black text-text mb-1">{{ authStore.user?.name }}</h1>
           <p class="text-gray-500 font-medium mb-6">{{ authStore.user?.email }}</p>
+          <p class="text-gray-500 font-medium mb-6 text-sm">{{ authStore.user?.phone || 'Телефон не вказано' }}</p>
 
           <div class="bg-gray-50 p-4 rounded-2xl text-left border border-gray-100 space-y-3">
             <div>
@@ -105,7 +155,12 @@ onMounted(fetchMyBookings);
               <span class="font-bold text-text">{{ new Date(authStore.user?.created_at).toLocaleDateString('uk-UA') }}</span>
             </div>
           </div>
-
+          <button @click="openEditProfileModal" class="w-full cursor-pointer bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
+            Редагувати профіль
+          </button>
+          <button @click="isChangePasswordModalOpen = true" class="w-full cursor-pointer bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
+            Змінити пароль
+          </button>
           <button @click="authStore.logout" class="w-full cursor-pointer mt-6 bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-600 hover:text-white transition-colors">
             Вийти з акаунта
           </button>
@@ -176,6 +231,55 @@ onMounted(fetchMyBookings);
             </div>
           </section>
         </div>
+      </div>
+    </div>
+    <div v-if="isEditProfileModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click="isEditProfileModalOpen = false">
+      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8" @click.stop>
+        <h3 class="text-2xl font-black mb-6 text-text">Редагування профілю</h3>
+        <form @submit.prevent="submitProfileUpdate" class="space-y-4">
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Ім'я</label>
+            <input v-model="profileForm.name" type="text" required class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none bg-gray-50 text-text font-medium">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Телефон</label>
+            <input
+                v-model="profileForm.phone"
+                @input="handlePhoneInput"
+                @focus="profileForm.phone = profileForm.phone || '+380 '"
+                type="tel"
+                maxlength="19"
+                placeholder="+380 (99) 000-00-00"
+                class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none bg-gray-50 text-text font-medium tracking-wide">
+          </div>
+          <div class="flex gap-4 pt-4">
+            <button type="button" @click="isEditProfileModalOpen = false" class="flex-1 px-4 py-3 font-bold text-gray-400 hover:text-text transition-colors cursor-pointer">Скасувати</button>
+            <button type="submit" class="flex-1 bg-primary text-white font-black py-3 rounded-xl shadow-lg hover:bg-purple-600 transition-all cursor-pointer">Зберегти</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div v-if="isChangePasswordModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click="isChangePasswordModalOpen = false">
+      <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8" @click.stop>
+        <h3 class="text-2xl font-black mb-6 text-text">Зміна пароля</h3>
+        <form @submit.prevent="submitPasswordUpdate" class="space-y-4">
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Поточний пароль</label>
+            <input v-model="passwordForm.current_password" type="password" required class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none bg-gray-50 text-text font-medium">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Новий пароль</label>
+            <input v-model="passwordForm.password" type="password" required minlength="8" class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none bg-gray-50 text-text font-medium">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Підтвердіть пароль</label>
+            <input v-model="passwordForm.password_confirmation" type="password" required minlength="8" class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none bg-gray-50 text-text font-medium">
+          </div>
+          <div class="flex gap-4 pt-4">
+            <button type="button" @click="isChangePasswordModalOpen = false" class="flex-1 px-4 py-3 font-bold text-gray-400 hover:text-text transition-colors cursor-pointer">Скасувати</button>
+            <button type="submit" class="flex-1 bg-primary text-white font-black py-3 rounded-xl shadow-lg hover:bg-purple-600 transition-all cursor-pointer">Оновити</button>
+          </div>
+        </form>
       </div>
     </div>
 

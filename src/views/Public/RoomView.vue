@@ -39,6 +39,7 @@ watch(() => authStore.user, (user) => {
   if (user) {
     bookingForm.value.name = user.name || '';
     bookingForm.value.email = user.email || '';
+    bookingForm.value.phone = user.phone || '';
   }
 }, { immediate: true });
 
