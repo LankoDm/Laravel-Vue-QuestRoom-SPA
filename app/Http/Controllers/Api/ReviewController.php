@@ -7,6 +7,7 @@ use App\Http\Requests\BookingRequest;
 use App\Http\Requests\ReviewRequest;
 use App\Models\Review;
 use Illuminate\Http\Request;
+use App\Events\ReviewCreated;
 
 class ReviewController extends Controller
 {
@@ -31,6 +32,7 @@ class ReviewController extends Controller
             'message' => $request->message,
             'rating' => $request->rating,
         ]);
+        ReviewCreated::dispatch($review);
         return response()->json([
             'message' => 'Дякуємо за відгук!',
             'review' => $review
