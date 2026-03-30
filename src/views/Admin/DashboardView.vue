@@ -20,6 +20,35 @@ const fetchStats = async () => {
     isLoading.value = false;
   }
 };
+const isDownloading = ref(false);
+
+const downloadPdf = async () => {
+  isDownloading.value = true;
+  try {
+    const response = await axios.get('http://localhost:8080/api/admin/report/pdf', {
+      responseType: 'blob',
+    });
+    const now = new Date();
+    const timestamp = now.getFullYear() + '_' +
+        String(now.getMonth() + 1).padStart(2, '0') + '_' +
+        String(now.getDate()).padStart(2, '0') + '_' +
+        String(now.getHours()).padStart(2, '0') + '_' +
+        String(now.getMinutes()).padStart(2, '0');
+    const fileName = `OneaRoom_Analytics_${timestamp}.pdf`;
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Помилка завантаження PDF:', error);
+    alert('Не вдалося завантажити звіт. Перевірте консоль.');
+  } finally {
+    isDownloading.value = false;
+  }
+};
 const formatPrice = (price) => {
   return new Intl.NumberFormat('uk-UA').format(price || 0) + ' ₴';
 };
@@ -65,7 +94,15 @@ onMounted(() => {
 
 <template>
   <div>
-    <h1 class="text-3xl font-black text-text mb-8">Огляд системи</h1>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <h1 class="text-3xl font-black text-text">Огляд системи</h1>
+
+      <button @click="downloadPdf" :disabled="isDownloading" class="flex items-center gap-2 bg-white text-primary font-bold px-4 py-2.5 rounded-xl border border-secondary shadow-sm hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50">
+        <svg v-if="!isDownloading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        <svg v-else class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        {{ isDownloading ? 'Формуємо' : 'Завантажити письмовий звіт' }}
+      </button>
+    </div>
 
     <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-4 gap-6 animate-pulse">
       <div v-for="i in 4" :key="i" class="bg-gray-100 h-32 rounded-3xl"></div>
@@ -103,6 +140,13 @@ onMounted(() => {
           </span>
           <span class="text-4xl font-black text-text">{{ stats.new_reviews }}</span>
         </div>
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-secondary flex flex-col justify-center transition-transform hover:-translate-y-1">
+          <span class="text-gray-500 font-medium mb-2 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+            Всього відгуків
+          </span>
+          <span class="text-4xl font-black text-text">{{ stats.total_reviews }}</span>
+        </div>
         <div
             class="bg-white p-6 rounded-3xl shadow-sm border border-secondary flex flex-col justify-center transition-transform hover:-translate-y-1">
           <span class="text-gray-500 font-medium mb-2 flex items-center gap-2">
@@ -112,6 +156,36 @@ onMounted(() => {
             Загальний дохід
           </span>
           <span class="text-4xl font-black text-green-600">{{ formatPrice(stats.total_revenue) }}</span>
+        </div>
+      </div>
+      <div v-if="stats.insights" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-gradient-to-br from-green-50 to-white p-5 rounded-2xl border border-green-100 shadow-sm transition-transform hover:-translate-y-1">
+          <span class="text-xs font-bold text-green-600 uppercase tracking-wider block mb-1">Топ бронювань</span>
+          <span class="font-black text-text text-lg block truncate" :title="stats.insights.most_booked?.name">
+            {{ stats.insights.most_booked?.name || 'Немає даних' }}
+          </span>
+          <span class="text-sm text-gray-500 font-medium">{{ stats.insights.most_booked?.count || 0 }} ігор</span>
+        </div>
+        <div class="bg-gradient-to-br from-red-50 to-white p-5 rounded-2xl border border-red-100 shadow-sm transition-transform hover:-translate-y-1">
+          <span class="text-xs font-bold text-red-500 uppercase tracking-wider block mb-1">Найменше бронювань</span>
+          <span class="font-black text-text text-lg block truncate" :title="stats.insights.least_booked?.name">
+            {{ stats.insights.least_booked?.name || 'Немає даних' }}
+          </span>
+          <span class="text-sm text-gray-500 font-medium">{{ stats.insights.least_booked?.count || 0 }} ігор</span>
+        </div>
+        <div class="bg-gradient-to-br from-yellow-50 to-white p-5 rounded-2xl border border-yellow-100 shadow-sm transition-transform hover:-translate-y-1">
+          <span class="text-xs font-bold text-yellow-600 uppercase tracking-wider block mb-1">Найкращий рейтинг</span>
+          <span class="font-black text-text text-lg block truncate" :title="stats.insights.best_rated?.name">
+            {{ stats.insights.best_rated?.name || 'Немає даних' }}
+          </span>
+          <span class="text-sm text-gray-500 font-medium">{{ stats.insights.best_rated?.rating || 0 }} / 5</span>
+        </div>
+        <div class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-2xl border border-gray-200 shadow-sm transition-transform hover:-translate-y-1">
+          <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Найнижчий рейтинг</span>
+          <span class="font-black text-text text-lg block truncate" :title="stats.insights.worst_rated?.name">
+            {{ stats.insights.worst_rated?.name || 'Немає даних' }}
+          </span>
+          <span class="text-sm text-gray-500 font-medium">{{ stats.insights.worst_rated?.rating || 0 }} / 5</span>
         </div>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
