@@ -5,6 +5,7 @@ import { useToastStore } from '@/stores/toast';
 
 const toast = useToastStore();
 const bookings = ref([]);
+const newBookingsQueue = ref([]);
 const selectedStatuses = ref(['pending', 'confirmed', 'finished', 'cancelled']);
 const dateMode = ref('all');
 const customDate = ref('');
@@ -20,6 +21,10 @@ const fetchBookings = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+const applyNewBookings = () => {
+  bookings.value = [...newBookingsQueue.value, ...bookings.value];
+  newBookingsQueue.value = [];
 };
 const getLocalYYYYMMDD = (dateObj) => {
   const year = dateObj.getFullYear();
@@ -114,16 +119,19 @@ const statusClasses = {
   finished: 'bg-blue-100 text-blue-700'
 };
 onMounted(() => {
-  fetchBookings();-
-      window.Echo.channel('manager-channel')
-          .listen('.booking.created', (e) => {
-            const index = bookings.value.findIndex(b => b.id === e.booking.id);
-            if (index !== -1) {
-              bookings.value[index] = e.booking;
-            } else {
-              bookings.value.unshift(e.booking);
-            }
-          });
+  fetchBookings();
+
+  if (window.Echo) {
+    window.Echo.channel('manager-channel')
+        .listen('.booking.created', (e) => {
+          const index = bookings.value.findIndex(b => b.id === e.booking.id);
+          if (index !== -1) {
+            bookings.value[index] = e.booking;
+          } else {
+            newBookingsQueue.value.push(e.booking);
+          }
+        });
+  }
 });
 </script>
 
@@ -183,6 +191,12 @@ onMounted(() => {
 
       <input v-if="dateMode === 'custom'" type="date" v-model="customDate"
              class="px-3 py-1.5 rounded-lg border border-secondary text-sm font-bold text-text outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+    </div>
+    <div v-if="newBookingsQueue.length > 0" class="mb-4 flex justify-center">
+      <button @click="applyNewBookings" class="flex items-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 px-6 py-2.5 rounded-full font-bold shadow-sm hover:bg-blue-600 hover:text-white transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        Завантажити нові бронювання ({{ newBookingsQueue.length }})
+      </button>
     </div>
     <div v-if="isLoading" class="py-20 text-center animate-pulse text-gray-400 font-bold">Завантаження</div>
 

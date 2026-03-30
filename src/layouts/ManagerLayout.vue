@@ -1,8 +1,39 @@
 <script setup>
+import { onMounted, onUnmounted } from 'vue';
 import { RouterView, RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useToastStore } from '@/stores/toast';
 
 const authStore = useAuthStore();
+const toast = useToastStore();
+
+onMounted(() => {
+  if (window.Echo) {
+    const channel = window.Echo.channel('manager-channel');
+    channel.listen('.booking.created', (e) => {
+      const roomName = e.booking.room?.name || `Кімнату #${e.booking.room_id}`;
+      const guestName = e.booking.guest_name || 'Клієнт';
+      if (e.booking.payment_method === 'card') {
+        if (e.booking.status === 'confirmed') {
+          toast.success(`Успішна оплата! ${guestName} оплатив(-ла) ${roomName}.`, 8000);
+        } else if (e.booking.status === 'pending') {
+          toast.warning(`Очікування оплати: ${guestName} оформлює карткою ${roomName}...`, 8000);
+        }
+      } else {
+        toast.info(`Нова бронь! ${guestName} очікується на ${roomName} (Оплата готівкою).`, 8000);
+      }
+    });
+    channel.listen('.review.created', (e) => {
+      const reviewer = e.review?.user?.name || e.review?.guest_name || 'Клієнт';
+      toast.success(`Новий відгук! ${reviewer} залишив(-ла) оцінку ${e.review?.rating || 5}/5.`, 8000);
+    });
+  }
+});
+onUnmounted(() => {
+  if (window.Echo) {
+    window.Echo.leaveChannel('manager-channel');
+  }
+});
 </script>
 
 <template>
