@@ -18,7 +18,7 @@ use App\Models\Booking;
 use App\Models\Review;
 
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 Route::get('/rooms', [RoomController::class, 'index']);
 Route::get('/rooms/{room}', [RoomController::class, 'show']);
@@ -67,5 +67,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
 
         Route::get('/admin/stats', [DashboardController::class, 'stats']);
+        Route::get('/admin/report/pdf', [DashboardController::class, 'downloadPdfReport']);
     });
 });
