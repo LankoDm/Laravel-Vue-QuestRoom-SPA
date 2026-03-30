@@ -22,6 +22,7 @@ import CancelView from "@/views/Public/CancelView.vue";
 import AuthCallbackView from "@/views/Auth/AuthCallbackView.vue";
 import ForgotPassword from "@/views/Auth/ForgotPassword.vue";
 import ResetPassword from "@/views/Auth/ResetPassword.vue";
+import NotFoundView from "@/views/Public/NotFoundView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -47,6 +48,7 @@ const router = createRouter({
         { path: 'contacts', name: 'contacts', component: ContactView },
         { path: 'success', name: 'success', component: SuccessView },
         { path: 'cancel', name: 'cancel', component: CancelView },
+        { path: '404', name: 'not-found', component: NotFoundView },
       ]
     },
     {
@@ -70,7 +72,7 @@ const router = createRouter({
         if (authStore.user && (authStore.user.role === 'manager' || authStore.user.role === 'admin')) {
           next();
         } else {
-          next({ name: 'home' });
+          next({ name: 'not-found' });
         }
       },
       children: [
@@ -78,6 +80,10 @@ const router = createRouter({
         { path: 'bookings', name: 'manager.bookings', component: ManagerBookingsView },
         { path: 'reviews', name: 'manager.reviews', component: ManagerReviewsView },
       ]
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: { name: 'not-found' }
     }
   ]
 });
@@ -93,7 +99,7 @@ router.beforeEach(async (to, from, next) => {
       return next({ name: 'login' });
     }
     if (to.meta.role && authStore.user?.role !== to.meta.role) {
-      return next({ name: 'home' });
+      return next({ name: 'not-found' });
     }
   }
   const guestOnlyRoutes = ['login', 'register', 'forgot-password', 'reset-password'];

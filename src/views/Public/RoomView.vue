@@ -1,10 +1,11 @@
 <script setup>
 import {ref, onMounted, computed, watch, onUnmounted} from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const room = ref(null);
 const isLoading = ref(true);
@@ -63,13 +64,22 @@ const handlePhoneInput = (event) => {
 const fetchRoom = async () => {
   try {
     const response = await axios.get(`http://localhost:8080/api/rooms/${route.params.slug}`);
-    room.value = response.data.data || response.data;
+    const fetchedRoom = response.data.data || response.data;
+    if (fetchedRoom.is_active === 0 || fetchedRoom.is_active === false) {
+      router.replace({ name: 'not-found' });
+      return;
+    }
+    room.value = fetchedRoom;
     selectedPlayers.value = room.value.min_players;
     await fetchReviews();
+    isLoading.value = false;
   } catch (error) {
     console.error('Помилка завантаження кімнати:', error);
-  } finally {
-    isLoading.value = false;
+    if (error.response?.status === 404) {
+      router.replace({ name: 'not-found' });
+    } else {
+      isLoading.value = false;
+    }
   }
 };
 const parsedImages = computed(() => {
