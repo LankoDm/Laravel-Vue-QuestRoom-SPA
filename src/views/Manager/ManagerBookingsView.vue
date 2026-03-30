@@ -4,6 +4,8 @@ import axios from 'axios';
 
 const bookings = ref([]);
 const selectedStatuses = ref(['pending', 'confirmed', 'finished', 'cancelled']);
+const dateMode = ref('all');
+const customDate = ref('');
 const isLoading = ref(true);
 const searchQuery = ref('');
 const fetchBookings = async () => {
@@ -17,8 +19,27 @@ const fetchBookings = async () => {
     isLoading.value = false;
   }
 };
+const getLocalYYYYMMDD = (dateObj) => {
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 const filteredBookings = computed(() => {
   let result = bookings.value.filter(b => selectedStatuses.value.includes(b.status));
+  if (dateMode.value !== 'all') {
+    const todayStr = getLocalYYYYMMDD(new Date());
+    result = result.filter(b => {
+      if (!b.start_time) return false;
+      const bDateStr = getLocalYYYYMMDD(new Date(b.start_time));
+      if (dateMode.value === 'today') {
+        return bDateStr === todayStr;
+      } else if (dateMode.value === 'custom' && customDate.value) {
+        return bDateStr === customDate.value;
+      }
+      return true;
+    });
+  }
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     const queryDigits = query.replace(/\D/g, '');
@@ -43,6 +64,10 @@ const statusNames = {
   confirmed: 'Підтверджено',
   cancelled: 'Скасовано',
   finished: 'Завершено'
+};
+const paymentNames = {
+  cash: 'Готівка',
+  card: 'Картка'
 };
 const finishBooking = async (id) => {
   if (!confirm('Позначити це бронювання як завершене?')) return;
@@ -138,6 +163,25 @@ onMounted(() => {
         <span class="text-sm font-bold text-red-700">Скасовано</span>
       </label>
     </div>
+    <div class="flex flex-wrap items-center gap-4 bg-white p-4 rounded-2xl border border-secondary shadow-sm">
+      <span class="text-sm font-bold text-gray-400 uppercase tracking-wider mr-2">Дата:</span>
+
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80">
+        <input type="radio" value="all" v-model="dateMode" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+        <span class="text-sm font-bold text-text">Всі дні</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80">
+        <input type="radio" value="today" v-model="dateMode" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+        <span class="text-sm font-bold text-text">За сьогодні</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80">
+        <input type="radio" value="custom" v-model="dateMode" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+        <span class="text-sm font-bold text-text">Обрати день:</span>
+      </label>
+
+      <input v-if="dateMode === 'custom'" type="date" v-model="customDate"
+             class="px-3 py-1.5 rounded-lg border border-secondary text-sm font-bold text-text outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+    </div>
     <div v-if="isLoading" class="py-20 text-center animate-pulse text-gray-400 font-bold">Завантаження</div>
 
     <div v-else class="bg-white rounded-3xl shadow-sm border border-secondary overflow-hidden">
@@ -147,7 +191,7 @@ onMounted(() => {
           <th class="p-4 pl-6">Час / ID</th>
           <th class="p-4">Клієнт</th>
           <th class="p-4">Кімната</th>
-          <th class="p-4">Гравці / Сума</th>
+          <th class="p-4">Гравці / Оплата</th>
           <th class="p-4">Статус</th>
           <th class="p-4 text-center">Дії</th>
         </tr>
@@ -164,8 +208,14 @@ onMounted(() => {
           </td>
           <td class="p-4 font-bold">{{ b.room?.name || 'Кімната #' + b.room_id }}</td>
           <td class="p-4">
-            <div class="font-bold">{{ b.players_count }} гравців</div>
-            <div class="text-xs text-gray-400">{{ formatPrice(b.total_price) }} ₴</div>
+            <div class="font-bold text-text">{{ b.players_count }} гравців</div>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="text-xs text-gray-500 font-bold">{{ formatPrice(b.total_price) }} ₴</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider"
+                    :class="b.payment_method === 'card' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'">
+                  {{ paymentNames[b.payment_method] || b.payment_method || 'Не вказано' }}
+                </span>
+            </div>
           </td>
           <td class="p-4">
               <span class="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider" :class="statusClasses[b.status]">

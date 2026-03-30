@@ -4,6 +4,8 @@ import axios from 'axios';
 
 const bookings = ref([]);
 const selectedStatuses = ref(['pending', 'confirmed', 'finished', 'cancelled']);
+const dateMode = ref('all');
+const customDate = ref('');
 const isLoading = ref(true);
 const searchQuery = ref('');
 const fetchBookings = async () => {
@@ -17,8 +19,27 @@ const fetchBookings = async () => {
     isLoading.value = false;
   }
 };
+const getLocalYYYYMMDD = (dateObj) => {
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 const filteredBookings = computed(() => {
   let result = bookings.value.filter(b => selectedStatuses.value.includes(b.status));
+  if (dateMode.value !== 'all') {
+    const todayStr = getLocalYYYYMMDD(new Date());
+    result = result.filter(b => {
+      if (!b.start_time) return false;
+      const bDateStr = getLocalYYYYMMDD(new Date(b.start_time));
+      if (dateMode.value === 'today') {
+        return bDateStr === todayStr;
+      } else if (dateMode.value === 'custom' && customDate.value) {
+        return bDateStr === customDate.value;
+      }
+      return true;
+    });
+  }
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     const queryDigits = query.replace(/\D/g, '');
@@ -110,6 +131,25 @@ onMounted(() => {
         <input type="checkbox" value="cancelled" v-model="selectedStatuses" class="w-4 h-4 text-red-500 rounded border-gray-300 focus:ring-red-500">
         <span class="text-sm font-bold text-red-700">Скасовано</span>
       </label>
+    </div>
+    <div class="flex flex-wrap items-center gap-4 bg-white p-4 rounded-2xl border border-secondary shadow-sm">
+      <span class="text-sm font-bold text-gray-400 uppercase tracking-wider mr-2">Дата:</span>
+
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80">
+        <input type="radio" value="all" v-model="dateMode" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+        <span class="text-sm font-bold text-text">Всі дні</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80">
+        <input type="radio" value="today" v-model="dateMode" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+        <span class="text-sm font-bold text-text">За сьогодні</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer hover:opacity-80">
+        <input type="radio" value="custom" v-model="dateMode" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+        <span class="text-sm font-bold text-text">Обрати день:</span>
+      </label>
+
+      <input v-if="dateMode === 'custom'" type="date" v-model="customDate"
+             class="px-3 py-1.5 rounded-lg border border-secondary text-sm font-bold text-text outline-none focus:border-primary focus:ring-1 focus:ring-primary">
     </div>
     <div v-if="isLoading" class="text-center py-12 text-gray-500 animate-pulse font-bold">
       Завантаження списку бронювань...
