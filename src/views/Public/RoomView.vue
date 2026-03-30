@@ -600,7 +600,7 @@ onUnmounted(() => {
     </div>
 
     <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" @click="closeBookingModal">
-      <div class="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden" @click.stop>
+      <div class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden" @click.stop>
 
         <div class="bg-primary p-6 text-white flex justify-between items-center relative overflow-hidden">
           <h3 class="text-2xl font-black relative z-10">Оформлення броні</h3>
@@ -616,95 +616,96 @@ onUnmounted(() => {
           <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
         </div>
 
-        <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-
-          <div class="bg-secondary/30 p-5 rounded-2xl text-sm text-text font-medium space-y-3 border border-secondary">
-            <div class="flex justify-between items-center">
-              <span class="text-gray-500">Кімната:</span>
-              <span class="font-bold text-right">{{ room.name }}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-gray-500">Дата та час:</span>
-              <span class="text-primary font-black bg-white px-3 py-1 rounded-lg border border-secondary">{{ selectedSlot.date }} о {{ selectedSlot.time }}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-gray-500">Гравців:</span>
-              <select v-model="selectedPlayers"
-                      class="bg-white border border-secondary rounded-lg px-3 py-1.5 font-bold text-text outline-none focus:ring-2 focus:ring-primary cursor-pointer shadow-sm">
-                <option v-for="n in (room.max_players - room.min_players + 1)" :key="n" :value="room.min_players + n - 1">
-                  {{ room.min_players + n - 1 }} чол.
-                </option>
-              </select>
-            </div>
-            <div class="flex justify-between items-center pt-3 border-t border-secondary border-dashed">
-              <span class="text-gray-500">До сплати:</span>
-              <span class="text-2xl font-black text-text">{{ currentPrice }} ₴</span>
-            </div>
+        <div class="p-8 max-h-[85vh] overflow-y-auto custom-scrollbar">
+          <div v-if="errorMessage" class="mb-6 p-3 bg-red-50 text-red-600 rounded-xl border border-red-200 font-bold flex items-start gap-2 shadow-sm text-sm">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>{{ errorMessage }}</span>
           </div>
+          <form @submit.prevent="submitBooking" class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div class="space-y-5">
+              <h4 class="text-lg font-black text-text border-b border-secondary pb-2">Ваші дані</h4>
 
-          <form @submit.prevent="submitBooking" class="space-y-4">
-
-            <div v-if="errorMessage" class="p-3 bg-red-50 text-red-600 rounded-xl border border-red-200 font-bold flex items-start gap-2 shadow-sm text-sm">
-              <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-              <span>{{ errorMessage }}</span>
-            </div>
-
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">Ваше ім'я *</label>
-              <input v-model="bookingForm.name" type="text" required placeholder="Олександр"
-                     class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors"
-                     :class="validationErrors.guest_name ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
-              <span v-if="validationErrors.guest_name" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_name[0] }}</span>
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">Телефон *</label>
-              <input v-model="bookingForm.phone"
-                     @input="handlePhoneInput"
-                     @focus="bookingForm.phone = bookingForm.phone || '+380 '"
-                     type="tel"
-                     required
-                     placeholder="+380 (99) 000-00-00"
-                     maxlength="19"
-                     class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors font-bold tracking-wide"
-                     :class="validationErrors.guest_phone ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
-              <span v-if="validationErrors.guest_phone" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_phone[0] }}</span>
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">Email (для чеку)</label>
-              <input v-model="bookingForm.email" type="email" placeholder="email@example.com"
-                     class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors"
-                     :class="validationErrors.guest_email ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
-              <span v-if="validationErrors.guest_email" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_email[0] }}</span>
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">Коментар (необов'язково)</label>
-              <textarea v-model="bookingForm.comment" rows="2" placeholder="Наприклад: з нами будуть діти"
-                        class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-gray-50 resize-none"></textarea>
-            </div>
-            <div class="pt-2">
-              <label class="block text-sm font-bold text-gray-700 mb-3">Спосіб оплати</label>
-              <div class="grid grid-cols-2 gap-3">
-                <label class="relative flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all"
-                       :class="bookingForm.payment_method === 'cash' ? 'border-primary bg-primary/5 text-primary' : 'border-secondary text-gray-500 hover:border-primary'">
-                  <input type="radio" v-model="bookingForm.payment_method" value="cash" class="sr-only">
-                  <span class="font-bold">Готівкою на місці</span>
-                </label>
-                <label class="relative flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all"
-                       :class="bookingForm.payment_method === 'card' ? 'border-primary bg-primary/5 text-primary' : 'border-secondary text-gray-500 hover:border-primary'">
-                  <input type="radio" v-model="bookingForm.payment_method" value="card" class="sr-only">
-                  <span class="font-bold">Карткою</span>
-                </label>
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Ваше ім'я *</label>
+                <input v-model="bookingForm.name" type="text" required placeholder="Олександр"
+                       class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors"
+                       :class="validationErrors.guest_name ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
+                <span v-if="validationErrors.guest_name" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_name[0] }}</span>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Телефон *</label>
+                <input v-model="bookingForm.phone"
+                       @input="handlePhoneInput"
+                       @focus="bookingForm.phone = bookingForm.phone || '+380 '"
+                       type="tel" required placeholder="+380 (99) 000-00-00" maxlength="19"
+                       class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors font-bold tracking-wide"
+                       :class="validationErrors.guest_phone ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
+                <span v-if="validationErrors.guest_phone" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_phone[0] }}</span>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Email (для чеку)</label>
+                <input v-model="bookingForm.email" type="email" placeholder="email@example.com"
+                       class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors"
+                       :class="validationErrors.guest_email ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
+                <span v-if="validationErrors.guest_email" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_email[0] }}</span>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Коментар (необов'язково)</label>
+                <textarea v-model="bookingForm.comment" rows="2" placeholder="Наприклад: з нами будуть діти"
+                          class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-gray-50 resize-none"></textarea>
               </div>
             </div>
-            <button type="submit" :disabled="isSubmitting"
-                    class="w-full mt-2 bg-primary hover:bg-purple-500 text-white font-black text-lg py-4 rounded-xl shadow-lg shadow-primary/30 transition-all disabled:opacity-70 disabled:transform-none transform hover:-translate-y-1">
-              <span v-if="isSubmitting">Відправка заявки</span>
-              <span v-else>Підтвердити бронювання</span>
-            </button>
-
-            <p class="text-center text-xs text-gray-400 mt-4">
-              Натискаючи кнопку, ви погоджуєтеся з правилами квест-кімнати
-            </p>
+            <div class="space-y-6 flex flex-col">
+              <h4 class="text-lg font-black text-text border-b border-secondary pb-2">Деталі гри</h4>
+              <div class="bg-secondary/30 p-5 rounded-2xl text-sm text-text font-medium space-y-4 border border-secondary">
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-500">Кімната:</span>
+                  <span class="font-bold text-right">{{ room.name }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-500">Дата та час:</span>
+                  <span class="text-primary font-black bg-white px-3 py-1 rounded-lg border border-secondary shadow-sm">{{ selectedSlot.date }} о {{ selectedSlot.time }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-gray-500">Гравців:</span>
+                  <select v-model="selectedPlayers"
+                          class="bg-white border border-secondary rounded-lg px-3 py-1.5 font-bold text-text outline-none focus:ring-2 focus:ring-primary cursor-pointer shadow-sm">
+                    <option v-for="n in (room.max_players - room.min_players + 1)" :key="n" :value="room.min_players + n - 1">
+                      {{ room.min_players + n - 1 }} чол.
+                    </option>
+                  </select>
+                </div>
+                <div class="flex justify-between items-center pt-4 border-t border-secondary border-dashed mt-2">
+                  <span class="text-gray-500">До сплати:</span>
+                  <span class="text-3xl font-black text-text">{{ currentPrice }} ₴</span>
+                </div>
+              </div>
+              <div class="pt-2">
+                <label class="block text-sm font-bold text-gray-700 mb-3">Спосіб оплати</label>
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all"
+                         :class="bookingForm.payment_method === 'cash' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-secondary text-gray-500 hover:border-primary'">
+                    <input type="radio" v-model="bookingForm.payment_method" value="cash" class="sr-only">
+                    <span class="font-bold">Готівкою на місці</span>
+                  </label>
+                  <label class="relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all"
+                         :class="bookingForm.payment_method === 'card' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-secondary text-gray-500 hover:border-primary'">
+                    <input type="radio" v-model="bookingForm.payment_method" value="card" class="sr-only">
+                    <span class="font-bold">Карткою зараз</span>
+                  </label>
+                </div>
+              </div>
+              <div class="mt-auto pt-4">
+                <button type="submit" :disabled="isSubmitting"
+                        class="w-full bg-primary hover:bg-purple-500 text-white font-black text-lg py-4 rounded-xl shadow-lg shadow-primary/30 transition-all disabled:opacity-70 disabled:transform-none transform hover:-translate-y-1">
+                  <span v-if="isSubmitting">Відправка заявки...</span>
+                  <span v-else>Підтвердити бронювання</span>
+                </button>
+                <p class="text-center text-xs text-gray-400 mt-4">
+                  Натискаючи кнопку, ви погоджуєтеся з правилами квест-кімнати
+                </p>
+              </div>
+            </div>
           </form>
         </div>
       </div>

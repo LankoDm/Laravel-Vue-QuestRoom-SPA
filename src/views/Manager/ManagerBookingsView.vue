@@ -37,8 +37,8 @@ const filteredBookings = computed(() => {
   if (dateMode.value !== 'all') {
     const todayStr = getLocalYYYYMMDD(new Date());
     result = result.filter(b => {
-      if (!b.start_time) return false;
-      const bDateStr = getLocalYYYYMMDD(new Date(b.start_time));
+      if (!b.created_at) return false;
+      const bDateStr = getLocalYYYYMMDD(new Date(b.created_at));
       if (dateMode.value === 'today') {
         return bDateStr === todayStr;
       } else if (dateMode.value === 'custom' && customDate.value) {

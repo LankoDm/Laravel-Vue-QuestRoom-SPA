@@ -62,7 +62,8 @@ const handlePhoneInput = (event) => {
 const fetchMyBookings = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/user/bookings');
-    bookings.value = response.data.data || response.data;
+    let data = response.data.data || response.data;
+    bookings.value = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   } catch (error) {
     console.error('Помилка завантаження бронювань:', error);
   } finally {
