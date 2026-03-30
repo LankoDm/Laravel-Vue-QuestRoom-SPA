@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Booking;
+use App\Events\BookingCreated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Stripe\Webhook;
@@ -47,6 +48,8 @@ class StripeWebhookController extends Controller
                     $booking = Booking::findOrFail($bookingId);
                     if ($booking) {
                         $booking->update(['status' => 'confirmed']);
+                        $booking->load('room');
+                        BookingCreated::dispatch($booking);
                         $finishTime = Carbon::parse($booking->end_time);
                         FinishBookingJob::dispatch($booking->id)->delay($finishTime);
                         $customerEmail = $booking->guest_email ?? $booking->user?->email;

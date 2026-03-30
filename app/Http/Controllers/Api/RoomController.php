@@ -81,7 +81,7 @@ class RoomController extends Controller
         }], 'rating')->withCount(['reviews' => function ($query) {
             $query->where('is_approved', true);
         }])->with(['bookings' => function ($query) {
-            $query->whereIn('status', ['pending', 'confirmed'])
+            $query->whereIn('status', ['pending', 'confirmed', 'finished'])
                 ->where('end_time', '>', now());
         }])->where('slug', $identifier)->orWhere('id', $identifier)->firstOrFail();
         return response()->json($room);
