@@ -34,7 +34,7 @@
         <iframe
             src="https://maps.google.com/maps?q=Чернігів,+пр-т+Миру,+20&t=&z=15&ie=UTF8&iwloc=&output=embed"
             class="absolute inset-0 w-full h-full border-0"
-            allowfullscreen=""
+            :allowfullscreen="true"
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade">
         </iframe>

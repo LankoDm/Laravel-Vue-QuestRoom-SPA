@@ -6,10 +6,12 @@ import {
   Chart as ChartJS, Title, Tooltip, Legend, BarElement,
   CategoryScale, LinearScale, ArcElement
 } from 'chart.js';
+import { useToastStore } from '@/stores/toast';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement);
 const stats = ref(null);
 const isLoading = ref(true);
+const toast = useToastStore();
 const fetchStats = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/admin/stats');
@@ -44,7 +46,7 @@ const downloadPdf = async () => {
     document.body.removeChild(link);
   } catch (error) {
     console.error('Помилка завантаження PDF:', error);
-    alert('Не вдалося завантажити звіт. Перевірте консоль.');
+    toast.error('Не вдалося завантажити звіт.');
   } finally {
     isDownloading.value = false;
   }

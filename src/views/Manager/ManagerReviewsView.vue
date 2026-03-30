@@ -1,7 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { useToastStore } from '@/stores/toast';
 
+const toast = useToastStore();
 const reviews = ref([]);
 const isLoading = ref(true);
 const fetchReviews = async () => {
@@ -20,7 +22,7 @@ const approveReview = async (id) => {
     const review = reviews.value.find(r => r.id === id);
     if (review) review.is_approved = 1; // або true
   } catch (error) {
-    alert('Не вдалося схвалити відгук.');
+    toast.error('Не вдалося схвалити відгук.');
   }
 };
 const deleteReview = async (id) => {
@@ -30,7 +32,7 @@ const deleteReview = async (id) => {
     await axios.delete(`http://localhost:8080/api/reviews/${id}`);
     reviews.value = reviews.value.filter(r => r.id !== id);
   } catch (error) {
-    alert('Не вдалося видалити відгук.');
+    toast.error('Не вдалося видалити відгук.');
   }
 };
 const formatDate = (dateString) => {

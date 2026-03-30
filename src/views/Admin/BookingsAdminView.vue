@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
+import { useToastStore } from '@/stores/toast';
 
 const bookings = ref([]);
 const selectedStatuses = ref(['pending', 'confirmed', 'finished', 'cancelled']);
@@ -8,6 +9,7 @@ const dateMode = ref('all');
 const customDate = ref('');
 const isLoading = ref(true);
 const searchQuery = ref('');
+const toast = useToastStore();
 const fetchBookings = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/bookings');
@@ -77,7 +79,7 @@ const deleteBooking = async (id) => {
     bookings.value = bookings.value.filter(b => b.id !== id);
   } catch (error) {
     console.error('Помилка видалення бронювання:', error);
-    alert('Не вдалося видалити бронювання.');
+    toast.error('Не вдалося видалити бронювання.');
   }
 };
 const statusClasses = {

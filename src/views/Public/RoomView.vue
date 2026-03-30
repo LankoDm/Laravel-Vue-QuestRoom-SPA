@@ -3,7 +3,9 @@ import {ref, onMounted, computed, watch, onUnmounted} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
+import { useToastStore } from '@/stores/toast';
 
+const toast = useToastStore();
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
@@ -202,7 +204,7 @@ const startTimer = () => {
 const closeModalWithTimeout = () => {
   clearInterval(timerInterval.value);
   isModalOpen.value = false;
-  alert('Час на оформлення вичерпано. Будь ласка, оберіть час ще раз.');
+  toast.info('Час на оформлення вичерпано. Будь ласка, оберіть час ще раз.');
 };
 
 const openBookingModal = async () => {
@@ -218,10 +220,10 @@ const openBookingModal = async () => {
     startTimer();
   } catch (error) {
     if (error.response?.status === 409) {
-      alert('Хтось інший щойно почав бронювати цей час! Будь ласка, оберіть інший слот.');
+      toast.info('Хтось інший щойно почав бронювати цей час! Будь ласка, оберіть інший слот.');
       selectedSlot.value = null;
     } else {
-      alert('Помилка сервера. Спробуйте ще раз.');
+      toast.error('Помилка сервера. Спробуйте ще раз.');
     }
   } finally {
     isSubmitting.value = false;
@@ -262,7 +264,7 @@ const submitBooking = async () => {
     }
     isModalOpen.value = false;
     selectedSlot.value = null;
-    alert('Бронювання успішно створено! Очікуйте дзвінка менеджера.');
+    toast.success('Бронювання успішно створено! Очікуйте дзвінка менеджера.');
   } catch (error) {
     console.error('Помилка бронювання:', error);
     if (error.response?.status === 422) {

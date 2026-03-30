@@ -2,7 +2,9 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 // import { useRouter } from 'vue-router';
+import { useToastStore } from '@/stores/toast';
 
+const toast = useToastStore();
 const rooms = ref([]);
 const isLoading = ref(true);
 const searchQuery = ref('');
@@ -51,10 +53,11 @@ const toggleStatus = async (room) => {
     await axios.patch(`http://localhost:8080/api/rooms/${room.id}/toggle-status`, {
       is_active: room.is_active
     });
+    toast.success('Статус успішно змінено');
   } catch (error) {
     console.error('Помилка оновлення статусу:', error);
     room.is_active = originalStatus;
-    alert('Не вдалося змінити статус. Перевірте підключення або бекенд.');
+    toast.error('Не вдалося змінити статус.');
   }
 };
 const deleteRoom = async (id) => {
@@ -67,7 +70,7 @@ const deleteRoom = async (id) => {
     rooms.value = rooms.value.filter(room => room.id !== id);
   } catch (error) {
     console.error('Помилка видалення кімнати:', error);
-    alert('Не вдалося видалити кімнату. Можливо, до неї прив\'язані бронювання.');
+    toast.error('Не вдалося видалити кімнату. Можливо, до неї прив\'язані бронювання.');
   }
 };
 const formatPrice = (price) => price ? price / 100 : 0;

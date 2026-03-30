@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-
+import { useToastStore } from '@/stores/toast';
+const toast = useToastStore();
 const users = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
@@ -24,7 +25,7 @@ const updateRole = async (user, newRole) => {
   } catch (error) {
     console.error('Помилка оновлення ролі:', error);
     user.role = oldRole;
-    alert('Не вдалося оновити роль. Перевірте консоль.');
+    toast.error('Не вдалося оновити роль.');
   }
 };
 

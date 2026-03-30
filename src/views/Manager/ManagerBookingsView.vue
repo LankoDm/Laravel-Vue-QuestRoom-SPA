@@ -1,7 +1,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
+import { useToastStore } from '@/stores/toast';
 
+const toast = useToastStore();
 const bookings = ref([]);
 const selectedStatuses = ref(['pending', 'confirmed', 'finished', 'cancelled']);
 const dateMode = ref('all');
@@ -76,7 +78,7 @@ const finishBooking = async (id) => {
     const b = bookings.value.find(item => item.id === id);
     if (b) b.status = 'finished';
   } catch (error) {
-    alert('Не вдалося змінити статус на завершено');
+    toast.error('Не вдалося змінити статус на завершено');
   }
 };
 const formatPrice = (price) => price ? price / 100 : 0;
@@ -92,7 +94,7 @@ const confirmBooking = async (id) => {
     const b = bookings.value.find(item => item.id === id);
     if (b) b.status = 'confirmed';
   } catch (error) {
-    alert('Не вдалося підтвердити');
+    toast.error('Не вдалося підтвердити');
   }
 };
 const cancelBooking = async (id) => {
@@ -102,7 +104,7 @@ const cancelBooking = async (id) => {
     const b = bookings.value.find(item => item.id === id);
     if (b) b.status = 'cancelled';
   } catch (error) {
-    alert('Не вдалося скасувати');
+    toast.error('Не вдалося скасувати');
   }
 };
 const statusClasses = {

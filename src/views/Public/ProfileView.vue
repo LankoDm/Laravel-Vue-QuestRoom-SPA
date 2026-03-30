@@ -2,7 +2,9 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
+import { useToastStore } from '@/stores/toast';
 
+const toast = useToastStore();
 const authStore = useAuthStore();
 const bookings = ref([]);
 const isLoading = ref(true);
@@ -22,26 +24,26 @@ const submitProfileUpdate = async () => {
     profileForm.value.phone = '';
   }
   if (profileForm.value.phone && profileForm.value.phone.length < 19) {
-    alert('Будь ласка, введіть повний номер телефону (10 цифр).');
+    toast.warning('Будь ласка, введіть повний номер телефону (10 цифр).');
     return;
   }
   try {
     const response = await axios.put('http://localhost:8080/api/user/profile', profileForm.value);
     await authStore.fetchUser();
-    alert('Профіль успішно оновлено!');
+    toast.success('Профіль успішно оновлено!');
     isEditProfileModalOpen.value = false;
   } catch (error) {
-    alert(error.response?.data?.message || 'Помилка оновлення профілю');
+    toast.error(error.response?.data?.message || 'Помилка оновлення профілю');
   }
 };
 const submitPasswordUpdate = async () => {
   try {
     await axios.put('http://localhost:8080/api/user/password', passwordForm.value);
-    alert('Пароль успішно змінено!');
+    toast.success('Пароль успішно змінено!');
     isChangePasswordModalOpen.value = false;
     passwordForm.value = { current_password: '', password: '', password_confirmation: '' };
   } catch (error) {
-    alert(error.response?.data?.message || 'Помилка зміни пароля. Перевірте правильність поточного пароля.');
+    toast.warning(error.response?.data?.message || 'Помилка зміни пароля. Перевірте правильність поточного пароля.');
   }
 };
 const handlePhoneInput = (event) => {
@@ -73,7 +75,7 @@ const viewDetails = async (id) => {
     selectedBooking.value = response.data.data || response.data;
     isModalOpen.value = true;
   } catch (error) {
-    alert('Не вдалося завантажити деталі бронювання.');
+    toast.error('Не вдалося завантажити деталі бронювання.');
   }
 };
 const activeBookings = computed(() => bookings.value.filter(b => ['pending', 'confirmed'].includes(b.status)));
@@ -106,10 +108,10 @@ const submitReview = async () => {
       rating: reviewForm.value.rating,
       message: reviewForm.value.message
     });
-    alert('Дякуємо! Ваш відгук успішно надіслано на модерацію.');
+    toast.success('Дякуємо! Ваш відгук успішно надіслано на модерацію.');
     isReviewModalOpen.value = false;
   } catch (error) {
-    alert(error.response?.data?.message || 'Помилка при відправці відгуку');
+    toast.error(error.response?.data?.message || 'Помилка при відправці відгуку');
   }
 };
 const statusClasses = {
