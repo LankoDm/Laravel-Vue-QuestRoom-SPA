@@ -67,8 +67,12 @@ class RoomController extends Controller
     {
         $validateData = $request->validated();
         if($request->hasFile('image_path')){
-            $path = $request->file('image_path')->store('rooms', 'public');
-            $validateData['image_path'] = url("storage/{$path}");
+            $paths = [];
+            foreach ($request->file('image_path') as $file) {
+                $path = $file->store('rooms', 'public');
+                $paths[] = url("storage/{$path}");
+            }
+            $validateData['image_path'] = json_encode($paths);
         }
         $room = Room::create($validateData);
         return response()->json($room, 201);
@@ -92,8 +96,12 @@ class RoomController extends Controller
         $validateData = $request->validated();
         $room = Room::findOrFail($id);
         if($request->hasFile('image_path')){
-            $path = $request->file('image_path')->store('rooms', 'public');
-            $validateData['image_path'] = url("storage/{$path}");
+            $paths = [];
+            foreach ($request->file('image_path') as $file) {
+                $path = $file->store('rooms', 'public');
+                $paths[] = url("storage/{$path}");
+            }
+            $validateData['image_path'] = json_encode($paths);
         } else {
             unset($validateData['image_path']);
         }

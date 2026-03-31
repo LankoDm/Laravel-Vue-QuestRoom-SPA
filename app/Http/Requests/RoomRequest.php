@@ -37,6 +37,10 @@ class RoomRequest extends FormRequest
             'genre' => 'nullable|string|max:50',
             'image_path' => [
                 $roomId ? 'nullable' : 'required',
+                'array',
+                'max:5'
+            ],
+            'image_path.*' => [
                 'image',
                 'mimes:jpeg,png,jpg,webp',
                 'max:4096'
