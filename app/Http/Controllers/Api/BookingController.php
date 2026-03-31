@@ -15,6 +15,7 @@ use App\Jobs\FinishBookingJob;
 use Illuminate\Support\Facades\Cache;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\RateLimiter;
 
 class BookingController extends Controller
 {
@@ -31,12 +32,38 @@ class BookingController extends Controller
 
     public function store(BookingRequest $request)
     {
-        return DB::transaction(function () use ($request) {
+        $ip = $request->ip();
+        if (RateLimiter::tooManyAttempts('booking-ip:'.$ip, 50)) { // змінити на 3
+            return response()->json([
+                'message' => 'Ви вичерпали ліміт бронювань на сьогодні. Будь ласка, зателефонуйте адміністратору.'
+            ], 429);
+        }
+        return DB::transaction(function () use ($request, $ip) {
             $room = Room::findOrFail($request->room_id);
             if ($request->players_count < $room->min_players || $request->players_count > $room->max_players) {
                 return response()->json([
                     'message' => "Кількість гравців має бути від {$room->min_players} до {$room->max_players}"
                 ], 422);
+            }
+            $userId = auth('sanctum')->check() ? auth('sanctum')->id() : null;
+            $activeBookingsCount = Booking::whereIn('status', ['pending', 'confirmed'])
+                ->where('start_time', '>=', now())
+                ->where(function ($query) use ($request, $userId) {
+                    $query->where(function($inner) use ($request) {
+                        $inner->where('guest_phone', $request->guest_phone);
+                        if (!empty($request->guest_email)) {
+                            $inner->orWhere('guest_email', $request->guest_email);
+                        }
+                    });
+                    if ($userId) {
+                        $query->orWhere('user_id', $userId);
+                    }
+                })
+                ->count();
+            if ($activeBookingsCount >= 2) {
+                return response()->json([
+                    'message' => 'Ви вже маєте 2 активних бронювання (очікують або підтверджені). Щоб забронювати більше ігор, зателевонуйте нам.'
+                ], 429);
             }
             $startTime = Carbon::parse($request->start_time);
             $endTime = $startTime->copy()->addMinutes($room->duration_minutes);
@@ -64,7 +91,6 @@ class BookingController extends Controller
             $extraPlayers = max(0, $request->players_count - $room->min_players);
             $playersSurcharge = $extraPlayers * 10000;
             $finalPrice = $basePrice + $lateSurcharge + $playersSurcharge;
-            $userId = auth('sanctum')->check() ? auth('sanctum')->id() : null;
             $booking = Booking::create([
                 'user_id' => $userId,
                 'room_id' => $room->id,
@@ -80,12 +106,13 @@ class BookingController extends Controller
                 'payment_method' => $request->payment_method,
             ]);
             Cache::forget($cacheKey);
+            Cache::forget("active_hold_ip_{$ip}");
+            RateLimiter::hit('booking-ip:'.$ip, 3600);
             $booking->load('room');
             BookingCreated::dispatch($booking);
             return response()->json($booking, 201);
         });
     }
-
     public function show(Request $request, string $id)
     {
         $booking = Booking::with(['room'])->findOrFail($id);
@@ -179,13 +206,40 @@ class BookingController extends Controller
         }
         $cacheKey = "hold_room_{$roomId}_time_{$startTime->timestamp}";
         $identifier = $request->hold_token;
+        $ip = $request->ip();
+        $ipCacheKey = "active_hold_ip_{$ip}";
+        $existingHoldKey = Cache::get($ipCacheKey);
+        if ($existingHoldKey === $cacheKey) {
+            Cache::put($cacheKey, $identifier, now()->addMinutes(10));
+            Cache::put($ipCacheKey, $cacheKey, now()->addMinutes(10));
+            return response()->json(['message' => 'Резерв оновлено.']);
+        }
+        if ($existingHoldKey && $existingHoldKey !== $cacheKey) {
+            Cache::forget($existingHoldKey);
+        }
         $locked = Cache::add($cacheKey, $identifier, now()->addMinutes(10));
         if (!$locked && Cache::get($cacheKey) !== $identifier) {
             return response()->json([
                 'message' => 'Цей час зараз оформлює інший користувач. Спробуйте пізніше або виберіть інший час.'
             ], 409);
         }
+        Cache::put($ipCacheKey, $cacheKey, now()->addMinutes(10));
         return response()->json(['message' => 'Час успішно зарезервовано на 10 хвилин.']);
+    }
+    public function releaseSlot(Request $request)
+    {
+        $request->validate([
+            'room_id' => 'required',
+            'start_time' => 'required|date',
+            'hold_token' => 'required|string',
+        ]);
+        $startTime = Carbon::parse($request->start_time);
+        $cacheKey = "hold_room_{$request->room_id}_time_{$startTime->timestamp}";
+        if (Cache::get($cacheKey) === $request->hold_token) {
+            Cache::forget($cacheKey);
+            Cache::forget("active_hold_ip_{$request->ip()}");
+        }
+        return response()->json(['message' => 'Резерв знято.']);
     }
     public function downloadTicket(Booking $booking)
     {

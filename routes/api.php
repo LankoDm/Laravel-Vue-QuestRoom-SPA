@@ -25,6 +25,7 @@ Route::get('/rooms/{room}', [RoomController::class, 'show']);
 Route::get('/rooms/{room}/reviews', [ReviewController::class, 'index']);
 Route::post('/bookings', [BookingController::class, 'store']);
 Route::post('/bookings/hold', [BookingController::class, 'holdSlot']);
+Route::post('/bookings/release', [BookingController::class, 'releaseSlot']);
 Route::post('/bookings/{booking}/pay', [PaymentController::class, 'createCheckoutSession']);
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);
 Route::get('/bookings/{booking}/ticket', [BookingController::class, 'downloadTicket'])->name('ticket.download')->middleware('signed');
