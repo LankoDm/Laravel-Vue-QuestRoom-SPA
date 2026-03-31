@@ -10,6 +10,7 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const room = ref(null);
+const activeImageIndex = ref(0);
 const isLoading = ref(true);
 const reviews = ref([]);
 const fetchReviews = async () => {
@@ -373,17 +374,27 @@ onUnmounted(() => {
 
         <div class="lg:col-span-2 space-y-8">
 
-          <div class="w-full flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 custom-scrollbar">
-            <template v-if="parsedImages.length > 0">
-              <div v-for="(img, idx) in parsedImages" :key="idx" class="snap-center shrink-0 w-full md:w-4/5 h-[400px] rounded-3xl overflow-hidden relative shadow-sm">
-                <img :src="img" :alt="room.name" class="w-full h-full object-cover" />
-              </div>
-            </template>
-            <template v-else>
-              <div class="snap-center shrink-0 w-full h-[400px] rounded-3xl bg-secondary flex items-center justify-center text-gray-400">
-                Немає зображень
-              </div>
-            </template>
+          <div class="w-full flex flex-col gap-4">
+            <div class="w-full h-[400px] md:h-[500px] rounded-3xl overflow-hidden shadow-sm relative bg-secondary/20">
+              <template v-if="parsedImages.length > 0">
+                <Transition name="fade" mode="out-in">
+                  <img :key="activeImageIndex" :src="parsedImages[activeImageIndex]" :alt="room.name" class="w-full h-full object-cover" />
+                </Transition>
+              </template>
+              <template v-else>
+                <div class="w-full h-full flex items-center justify-center text-gray-400 font-bold">
+                  Немає зображень
+                </div>
+              </template>
+            </div>
+            <div v-if="parsedImages.length > 1" class="flex flex-wrap gap-3">
+              <button v-for="(img, idx) in parsedImages" :key="idx"
+                      @click="activeImageIndex = idx"
+                      class="shrink-0 w-24 h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer shadow-sm"
+                      :class="activeImageIndex === idx ? 'border-primary opacity-100 ring-2 ring-primary/30' : 'border-transparent opacity-60 hover:opacity-100 hover:border-secondary'">
+                <img :src="img" class="w-full h-full object-cover" />
+              </button>
+            </div>
           </div>
 
           <div>

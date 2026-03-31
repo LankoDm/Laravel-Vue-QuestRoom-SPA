@@ -25,13 +25,13 @@ const form = ref({
   duration_minutes: 60,
   is_active: 1
 });
-const imageFile = ref(null);
-const imagePreview = ref(null);
+const imageFiles = ref([]);
+const imagePreviews = ref([]);
 const handleImageUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    imageFile.value = file;
-    imagePreview.value = URL.createObjectURL(file);
+  const files = Array.from(event.target.files);
+  if (files.length > 0) {
+    imageFiles.value = files;
+    imagePreviews.value = files.map(file => URL.createObjectURL(file));
   }
 };
 const fetchRoom = async () => {
@@ -55,7 +55,17 @@ const fetchRoom = async () => {
       weekend_price: data.weekend_price / 100,
     };
     if (data.image_path) {
-      imagePreview.value = data.image_path;
+      let parsedImages = [];
+      if (Array.isArray(data.image_path)) {
+        parsedImages = data.image_path;
+      } else if (typeof data.image_path === 'string') {
+        try {
+          parsedImages = JSON.parse(data.image_path);
+        } catch (e) {
+          parsedImages = [data.image_path];
+        }
+      }
+      imagePreviews.value = parsedImages;
     }
   } catch (error) {
     errorMessage.value = 'Не вдалося завантажити дані кімнати';
@@ -83,8 +93,10 @@ const saveRoom = async () => {
     formData.append('is_active', form.value.is_active ? 1 : 0);
     formData.append('weekday_price', Math.round(form.value.weekday_price * 100));
     formData.append('weekend_price', Math.round(form.value.weekend_price * 100));
-    if (imageFile.value) {
-      formData.append('image_path', imageFile.value);
+    if (imageFiles.value.length > 0) {
+      imageFiles.value.forEach(file => {
+        formData.append('image_path[]', file);
+      });
     }
     if (isEditMode.value) {
       formData.append('_method', 'PUT');
@@ -99,7 +111,6 @@ const saveRoom = async () => {
     router.push({ name: 'admin.rooms' });
   } catch (error) {
     if (error.response?.status === 422) {
-      // Зберігаємо всі помилки по полях у нашу змінну
       validationErrors.value = error.response.data.errors;
       errorMessage.value = 'Будь ласка, виправте помилки у формі нижче.';
     } else {
@@ -136,7 +147,6 @@ onMounted(() => {
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-
         <div class="md:col-span-2 space-y-6 bg-white p-8 rounded-3xl shadow-sm border border-secondary">
           <h2 class="text-xl font-bold text-text mb-4">Основна інформація</h2>
 
@@ -170,13 +180,19 @@ onMounted(() => {
                    :class="validationErrors.hint_phrase ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-200' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
             <span v-if="validationErrors.hint_phrase" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.hint_phrase[0] }}</span>
           </div>
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-2">Зображення (Обкладинка)</label>
-            <input type="file" @change="handleImageUpload" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-purple-500 cursor-pointer mb-4"/>
+          <div class="pt-4 border-t border-secondary">
+            <label class="block text-sm font-bold text-gray-700 mb-2">Галерея зображень (до 5 фото)</label>
+            <input type="file" @change="handleImageUpload" accept="image/*" multiple
+                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-purple-500 cursor-pointer mb-4"/>
             <span v-if="validationErrors.image_path" class="text-xs text-red-500 font-bold mt-1 mb-2 block">{{ validationErrors.image_path[0] }}</span>
-            <div v-if="imagePreview" class="w-full h-48 rounded-xl overflow-hidden border border-secondary bg-gray-100">
-              <img :src="imagePreview" class="w-full h-full object-cover" />
+            <div v-if="imagePreviews.length > 0" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div v-for="(img, idx) in imagePreviews" :key="idx" class="w-full h-24 rounded-xl overflow-hidden border border-secondary bg-gray-100 shadow-sm">
+                <img :src="img" class="w-full h-full object-cover" />
+              </div>
             </div>
+            <p v-if="isEditMode && imageFiles.length === 0 && imagePreviews.length > 0" class="text-xs text-gray-400 mt-3">
+              * Завантаження нових фото повністю замінить поточну галерею.
+            </p>
           </div>
         </div>
         <div class="space-y-6 bg-white p-8 rounded-3xl shadow-sm border border-secondary h-fit">
