@@ -9,6 +9,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use App\Events\BookingUpdated;
 
 class FinishBookingJob implements ShouldQueue
 {
@@ -31,7 +32,7 @@ class FinishBookingJob implements ShouldQueue
         if ($booking && $booking->status === 'confirmed') {
             $booking->status = 'finished';
             $booking->save();
-            broadcast(new BookingCreated($booking));
+            broadcast(new BookingUpdated($booking));
         }
     }
 }
