@@ -94,6 +94,7 @@ const formatDate = (dateString) => {
   });
 };
 const confirmBooking = async (id) => {
+  if (!confirm('Підтвердити замовлення?')) return;
   try {
     await axios.patch(`http://localhost:8080/api/bookings/${id}/confirm`);
     const b = bookings.value.find(item => item.id === id);
@@ -126,9 +127,15 @@ onMounted(() => {
         .listen('.booking.created', (e) => {
           const index = bookings.value.findIndex(b => b.id === e.booking.id);
           if (index !== -1) {
-            bookings.value[index] = e.booking;
+            bookings.value.splice(index, 1, { ...bookings.value[index], ...e.booking });
           } else {
             newBookingsQueue.value.push(e.booking);
+          }
+        })
+        .listen('.booking.updated', (e) => {
+          const index = bookings.value.findIndex(b => b.id === e.booking.id);
+          if (index !== -1) {
+            bookings.value.splice(index, 1, { ...bookings.value[index], ...e.booking });
           }
         });
   }
