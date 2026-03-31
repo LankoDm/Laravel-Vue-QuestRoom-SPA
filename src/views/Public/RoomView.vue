@@ -203,8 +203,10 @@ const startTimer = () => {
 };
 
 const closeModalWithTimeout = () => {
+  releaseSlot();
   clearInterval(timerInterval.value);
   isModalOpen.value = false;
+  selectedSlot.value = null;
   toast.info('Час на оформлення вичерпано. Будь ласка, оберіть час ще раз.');
 };
 
@@ -230,12 +232,24 @@ const openBookingModal = async () => {
     isSubmitting.value = false;
   }
 };
-
+const handleBeforeUnload = () => {
+  if (isModalOpen.value && selectedSlot.value) {
+    const backendStartTime = `${selectedSlot.value.backendDate} ${selectedSlot.value.time}:00`;
+    const payload = JSON.stringify({
+      room_id: room.value.id,
+      start_time: backendStartTime,
+      hold_token: holdToken.value
+    });
+    navigator.sendBeacon('http://localhost:8080/api/bookings/release', new Blob([payload], { type: 'application/json' }));
+  }
+};
 const closeBookingModal = () => {
+  releaseSlot();
   clearInterval(timerInterval.value);
   isModalOpen.value = false;
   validationErrors.value = {};
   errorMessage.value = '';
+  selectedSlot.value = null;
 };
 const submitBooking = async () => {
   isSubmitting.value = true;
@@ -268,10 +282,14 @@ const submitBooking = async () => {
     toast.success('Бронювання успішно створено! Очікуйте дзвінка менеджера.');
   } catch (error) {
     console.error('Помилка бронювання:', error);
-    if (error.response?.status === 422) {
+    if (error.response?.status === 422 && error.response.data.errors) {
       validationErrors.value = error.response.data.errors;
       errorMessage.value = 'Будь ласка, перевірте правильність заповнення форми.';
-    } else {
+    }
+    else if (error.response?.data?.message) {
+      errorMessage.value = error.response.data.message;
+    }
+    else {
       errorMessage.value = 'Помилка при створенні бронювання. Спробуйте пізніше.';
     }
   } finally {
@@ -353,13 +371,28 @@ const triggerDecoder = () => {
     iterations += 1 / 3;
   }, 40);
 };
+const releaseSlot = () => {
+  if (!selectedSlot.value) return;
+  try {
+    const backendStartTime = `${selectedSlot.value.backendDate} ${selectedSlot.value.time}:00`;
+    axios.post('http://localhost:8080/api/bookings/release', {
+      room_id: room.value.id,
+      start_time: backendStartTime,
+      hold_token: holdToken.value
+    });
+  } catch (error) {
+    console.error('Помилка звільнення слоту:', error);
+  }
+};
 
 onMounted(() => {
   fetchRoom();
+  window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onUnmounted(() => {
   clearInterval(timerInterval.value);
+  window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 </script>
 
