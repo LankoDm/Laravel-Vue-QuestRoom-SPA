@@ -282,7 +282,12 @@ const submitBooking = async () => {
     toast.success('Бронювання успішно створено! Очікуйте дзвінка менеджера.');
   } catch (error) {
     console.error('Помилка бронювання:', error);
-    if (error.response?.status === 422 && error.response.data.errors) {
+    if (error.response?.status === 409) {
+      closeBookingModal();
+      toast.info(error.response.data.message || 'Хтось інший щойно почав бронювати цей час! Будь ласка, оберіть інший слот.');
+      fetchRoom();
+    }
+    else if (error.response?.status === 422 && error.response.data.errors) {
       validationErrors.value = error.response.data.errors;
       errorMessage.value = 'Будь ласка, перевірте правильність заповнення форми.';
     }
@@ -388,11 +393,23 @@ const releaseSlot = () => {
 onMounted(() => {
   fetchRoom();
   window.addEventListener('beforeunload', handleBeforeUnload);
+  if (window.Echo) {
+    window.Echo.channel('manager-channel')
+        .listen('.booking.created', () => {
+          fetchRoom();
+        })
+        .listen('.booking.updated', () => {
+          fetchRoom();
+        });
+  }
 });
 
 onUnmounted(() => {
   clearInterval(timerInterval.value);
   window.removeEventListener('beforeunload', handleBeforeUnload);
+  if (window.Echo) {
+    window.Echo.leaveChannel('manager-channel');
+  }
 });
 </script>
 

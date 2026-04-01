@@ -87,10 +87,17 @@ const finishBooking = async (id) => {
   }
 };
 const formatPrice = (price) => price ? price / 100 : 0;
-const formatDate = (dateString) => {
+const formatDateTime = (dateString) => {
   if (!dateString) return '—';
-  return new Date(dateString).toLocaleString('uk-UA', {
-    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+  return new Date(dateString).toLocaleDateString('uk-UA', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  });
+};
+
+const formatTime = (dateString) => {
+  if (!dateString) return '—';
+  return new Date(dateString).toLocaleTimeString('uk-UA', {
+    hour: '2-digit', minute: '2-digit'
   });
 };
 const confirmBooking = async (id) => {
@@ -221,9 +228,10 @@ onMounted(() => {
         </thead>
         <tbody class="divide-y divide-gray-100">
         <tr v-for="b in filteredBookings" :key="b.id" class="hover:bg-gray-50">
-          <td class="p-4 pl-6">
-            <div class="font-black text-primary">{{ formatDate(b.start_time) }}</div>
-            <div class="text-xs text-gray-400">#{{ b.id }}</div>
+          <td class="p-4 pl-6 min-w-[140px]">
+            <div class="text-xs text-gray-500 font-bold mb-0.5">{{ formatDateTime(b.start_time) }}</div>
+            <div class="font-black text-primary text-sm">{{ formatTime(b.start_time) }} - {{ formatTime(b.end_time) }}</div>
+            <div class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">#{{ b.id }}</div>
           </td>
           <td class="p-4 font-bold text-text">
             {{ b.guest_name }}
