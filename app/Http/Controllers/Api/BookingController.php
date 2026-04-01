@@ -32,13 +32,7 @@ class BookingController extends Controller
 
     public function store(BookingRequest $request)
     {
-        $ip = $request->ip();
-        if (RateLimiter::tooManyAttempts('booking-ip:'.$ip, 50)) { // змінити на 3
-            return response()->json([
-                'message' => 'Ви вичерпали ліміт бронювань на сьогодні. Будь ласка, зателефонуйте адміністратору.'
-            ], 429);
-        }
-        return DB::transaction(function () use ($request, $ip) {
+        return DB::transaction(function () use ($request) {
             $room = Room::findOrFail($request->room_id);
             if ($request->players_count < $room->min_players || $request->players_count > $room->max_players) {
                 return response()->json([
@@ -106,8 +100,6 @@ class BookingController extends Controller
                 'payment_method' => $request->payment_method,
             ]);
             Cache::forget($cacheKey);
-            Cache::forget("active_hold_ip_{$ip}");
-            RateLimiter::hit('booking-ip:'.$ip, 3600);
             $booking->load('room');
             BookingCreated::dispatch($booking);
             return response()->json($booking, 201);
@@ -197,7 +189,7 @@ class BookingController extends Controller
         $roomId = $request->room_id;
         $startTime = Carbon::parse($request->start_time);
         $isConflict = Booking::where('room_id', $roomId)
-            ->where('status', '!=', 'cancelled')
+            ->whereIn('status', ['pending', 'confirmed'])
             ->where('start_time', '<=', $startTime)
             ->where('end_time', '>', $startTime)
             ->exists();
@@ -206,24 +198,12 @@ class BookingController extends Controller
         }
         $cacheKey = "hold_room_{$roomId}_time_{$startTime->timestamp}";
         $identifier = $request->hold_token;
-        $ip = $request->ip();
-        $ipCacheKey = "active_hold_ip_{$ip}";
-        $existingHoldKey = Cache::get($ipCacheKey);
-        if ($existingHoldKey === $cacheKey) {
-            Cache::put($cacheKey, $identifier, now()->addMinutes(10));
-            Cache::put($ipCacheKey, $cacheKey, now()->addMinutes(10));
-            return response()->json(['message' => 'Резерв оновлено.']);
-        }
-        if ($existingHoldKey && $existingHoldKey !== $cacheKey) {
-            Cache::forget($existingHoldKey);
-        }
         $locked = Cache::add($cacheKey, $identifier, now()->addMinutes(10));
         if (!$locked && Cache::get($cacheKey) !== $identifier) {
             return response()->json([
                 'message' => 'Цей час зараз оформлює інший користувач. Спробуйте пізніше або виберіть інший час.'
             ], 409);
         }
-        Cache::put($ipCacheKey, $cacheKey, now()->addMinutes(10));
         return response()->json(['message' => 'Час успішно зарезервовано на 10 хвилин.']);
     }
     public function releaseSlot(Request $request)
@@ -237,7 +217,6 @@ class BookingController extends Controller
         $cacheKey = "hold_room_{$request->room_id}_time_{$startTime->timestamp}";
         if (Cache::get($cacheKey) === $request->hold_token) {
             Cache::forget($cacheKey);
-            Cache::forget("active_hold_ip_{$request->ip()}");
         }
         return response()->json(['message' => 'Резерв знято.']);
     }
