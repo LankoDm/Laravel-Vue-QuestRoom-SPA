@@ -11,8 +11,6 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #000; padding: 10px; text-align: left; }
         th { background-color: #fff; }
-
-        /* Стилі для блоку підпису */
         .signature-section { margin-top: 60px; page-break-inside: avoid; }
         .sign-table { width: 100%; border: none; margin-top: 10px; }
         .sign-table td { border: none; padding: 0; vertical-align: top; }
@@ -26,7 +24,9 @@
 
 <div class="box">
     <h3>Загальні показники:</h3>
-    <p>Загальний дохід: <span class="highlight">{{ number_format($totalRevenue, 0, '.', ' ') }} ₴</span></p>
+    <p>Загальний дохід (за весь час): <span class="highlight">{{ number_format($totalRevenue, 0, '.', ' ') }} ₴</span></p>
+    <p>Дохід за останні 30 днів: <span class="highlight">{{ number_format($revenueMonth, 0, '.', ' ') }} ₴</span></p>
+    <p>Дохід за останні 7 днів: <span class="highlight">{{ number_format($revenueWeek, 0, '.', ' ') }} ₴</span></p>
     <p>Кількість успішних ігор: <span class="highlight">{{ $totalBookings }}</span></p>
 </div>
 

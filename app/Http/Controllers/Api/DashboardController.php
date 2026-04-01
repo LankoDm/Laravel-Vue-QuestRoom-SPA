@@ -19,6 +19,12 @@ class DashboardController extends Controller
         $newReviews = Review::where('is_approved', 0)->count();
         $totalReviews = Review::count();
         $totalRevenue = Booking::whereIn('status', ['confirmed', 'finished'])->sum('total_price') / 100;
+        $revenueWeek = Booking::whereIn('status', ['confirmed', 'finished'])
+                ->where('created_at', '>=', Carbon::now()->subDays(7))
+                ->sum('total_price') / 100;
+        $revenueMonth = Booking::whereIn('status', ['confirmed', 'finished'])
+                ->where('created_at', '>=', Carbon::now()->subDays(30))
+                ->sum('total_price') / 100;
         $last7Days = collect();
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
@@ -54,6 +60,8 @@ class DashboardController extends Controller
             'new_reviews' => $newReviews,
             'total_reviews' => $totalReviews,
             'total_revenue' => $totalRevenue,
+            'revenue_week' => $revenueWeek,
+            'revenue_month' => $revenueMonth,
             'revenue_chart' => $last7Days,
             'rooms_chart' => $roomsPopularity,
             'insights' => [
@@ -74,6 +82,10 @@ class DashboardController extends Controller
         $data = [
             'date' => Carbon::now()->format('d.m.Y H:i'),
             'totalRevenue' => Booking::whereIn('status', ['confirmed', 'finished'])->sum('total_price') / 100,
+            'revenueWeek' => Booking::whereIn('status', ['confirmed', 'finished'])
+                    ->where('created_at', '>=', Carbon::now()->subDays(7))->sum('total_price') / 100,
+            'revenueMonth' => Booking::whereIn('status', ['confirmed', 'finished'])
+                    ->where('created_at', '>=', Carbon::now()->subDays(30))->sum('total_price') / 100,
             'totalBookings' => Booking::whereIn('status', ['confirmed', 'finished'])->count(),
             'mostBooked' => $rooms->sortByDesc('bookings_count')->first(),
             'leastBooked' => $rooms->sortBy('bookings_count')->first(),

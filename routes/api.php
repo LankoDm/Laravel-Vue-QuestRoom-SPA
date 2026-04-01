@@ -17,8 +17,10 @@ use App\Models\Room;
 use App\Models\Booking;
 use App\Models\Review;
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::middleware('guest')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login'])->name('login');
+});
 
 Route::get('/rooms', [RoomController::class, 'index']);
 Route::get('/rooms/{room}', [RoomController::class, 'show']);
