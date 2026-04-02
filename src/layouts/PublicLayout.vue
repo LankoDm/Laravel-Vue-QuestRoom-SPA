@@ -1,8 +1,20 @@
 <script setup>
+import { ref, onMounted } from 'vue';
 import { RouterView, RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import axios from 'axios';
 
 const authStore = useAuthStore();
+const footerRooms = ref([]);
+onMounted(async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/api/rooms');
+    let data = response.data.data || response.data;
+    footerRooms.value = data.filter(room => room.is_active);
+  } catch (error) {
+    console.error('Помилка завантаження квестів для футера:', error);
+  }
+});
 </script>
 
 <template>
@@ -14,7 +26,6 @@ const authStore = useAuthStore();
         <RouterLink :to="{ name: 'home' }" class="text-2xl font-black text-primary tracking-tight">
           Onea<span class="text-text">Room</span>
         </RouterLink>
-<!-- зміна для вкладок про нас та контакти -->
         <nav class="hidden md:flex space-x-8 font-semibold text-gray-500">
           <RouterLink
               :to="{ name: 'home' }"
@@ -70,9 +81,33 @@ const authStore = useAuthStore();
     <main class="flex-grow">
       <RouterView />
     </main>
-<!--додати посилання на соцмережі та політика конфіденційності і договір публічної оферти-->
-    <footer class="bg-white border-t border-secondary py-8 mt-12 text-center text-gray-400 text-sm">
-      <p>© 2026 OneaRoom. Дипломний проєкт.</p>
+    <footer class="bg-white border-t border-secondary mt-12 shrink-0">
+      <div class="max-w-6xl mx-auto px-6 py-12">
+        <div v-if="footerRooms.length > 0" class="mb-12">
+          <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Наші квести</h3>
+          <div class="flex flex-wrap gap-x-10 gap-y-4">
+            <RouterLink
+                v-for="room in footerRooms"
+                :key="room.id"
+                :to="{ name: 'room.show', params: { slug: room.slug } }"
+                class="group flex items-center gap-3 text-sm font-bold text-gray-600 hover:text-primary transition-colors max-w-full">
+              <span class="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-primary transition-colors shrink-0"></span>
+              <span class="truncate">{{ room.name }}</span>
+            </RouterLink>
+          </div>
+        </div>
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6 pt-8 border-t border-secondary">
+          <div class="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
+            <RouterLink :to="{ name: 'home' }" class="text-xl font-black text-primary tracking-tight">Onea<span class="text-text">Room</span></RouterLink>
+            <span class="hidden md:inline text-gray-300">|</span>
+            <span class="text-sm text-gray-400 font-medium">© 2026 Чернігів.</span>
+          </div>
+          <div class="flex flex-wrap justify-center gap-6 text-sm font-bold">
+            <RouterLink to="/privacy-policy" class="text-gray-500 hover:text-primary transition-colors">Політика конфіденційності</RouterLink>
+            <RouterLink to="/public-offer" class="text-gray-500 hover:text-primary transition-colors">Договір публічної оферти</RouterLink>
+          </div>
+        </div>
+      </div>
     </footer>
 
   </div>

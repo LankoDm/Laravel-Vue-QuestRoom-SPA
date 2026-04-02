@@ -23,6 +23,8 @@ import AuthCallbackView from "@/views/Auth/AuthCallbackView.vue";
 import ForgotPassword from "@/views/Auth/ForgotPassword.vue";
 import ResetPassword from "@/views/Auth/ResetPassword.vue";
 import NotFoundView from "@/views/Public/NotFoundView.vue";
+import PrivacyPolicyView from "@/views/Public/PrivacyPolicyView.vue";
+import PublicOfferView from "@/views/Public/PublicOfferView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -32,7 +34,6 @@ const router = createRouter({
       component: PublicLayout,
       children: [
         { path: '', name: 'home', component: HomeView },
-        { path: '/:slug', name: 'room.show', component: RoomView },
         { path: 'login', name: 'login', component: LoginView },
         { path: 'register', name: 'register', component: RegisterView },
         { path: 'auth/callback', name: 'auth.callback', component: AuthCallbackView },
@@ -48,7 +49,10 @@ const router = createRouter({
         { path: 'contacts', name: 'contacts', component: ContactView },
         { path: 'success', name: 'success', component: SuccessView },
         { path: 'cancel', name: 'cancel', component: CancelView },
+        { path: 'privacy-policy', name: 'privacy-policy', component: PrivacyPolicyView },
+        { path: 'public-offer', name: 'public-offer', component: PublicOfferView },
         { path: '404', name: 'not-found', component: NotFoundView },
+        { path: '/:slug', name: 'room.show', component: RoomView },
       ]
     },
     {
