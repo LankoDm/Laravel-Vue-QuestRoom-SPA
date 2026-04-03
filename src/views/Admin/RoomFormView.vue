@@ -202,10 +202,10 @@ onMounted(() => {
             <select v-model="form.difficulty" required
                     class="w-full px-4 py-3 rounded-xl border focus:outline-none transition-colors"
                     :class="validationErrors.difficulty ? 'border-red-500 bg-red-50 focus:ring-2 focus:ring-red-200' : 'border-secondary bg-gray-50 focus:ring-2 focus:ring-primary'">
-              <option value="easy">Легко (Easy)</option>
-              <option value="medium">Середньо (Medium)</option>
-              <option value="hard">Складно (Hard)</option>
-              <option value="ultra hard">Дуже складно (Ultra Hard)</option>
+              <option value="easy">Легкий</option>
+              <option value="medium">Середній</option>
+              <option value="hard">Складний</option>
+              <option value="ultra hard">Експерт</option>
             </select>
           </div>
           <div>

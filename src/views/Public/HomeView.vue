@@ -255,7 +255,8 @@ onMounted(() => {
                 </div>
 
                 <div class="absolute top-4 left-4 flex gap-2">
-                  <span class="bg-primary text-white px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg">
+                  <span class="px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg"
+                        :class="room.difficulty === 'hard' || room.difficulty === 'ultra hard' ? 'bg-red-100 text-red-600' : (room.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600')">
                     {{ difficultyMap[room.difficulty] || room.difficulty }}
                   </span>
                   <span v-if="room.age" class="bg-black/70 backdrop-blur-md text-white px-3 py-1 rounded-xl text-xs font-black tracking-wider shadow-lg border border-white/20">

@@ -74,6 +74,12 @@ const deleteRoom = async (id) => {
   }
 };
 const formatPrice = (price) => price ? price / 100 : 0;
+const difficultyMap = {
+  'easy': 'Легкий',
+  'medium': 'Середній',
+  'hard': 'Складний',
+  'ultra hard': 'Експерт'
+};
 
 onMounted(() => {
   fetchRooms();
@@ -126,7 +132,7 @@ onMounted(() => {
             <td class="p-4">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"
                         :class="room.difficulty === 'hard' || room.difficulty === 'ultra hard' ? 'bg-red-100 text-red-600' : (room.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600')">
-                    {{ room.difficulty }}
+                    {{ difficultyMap[room.difficulty] || room.difficulty }}
                   </span>
             </td>
             <td class="p-4">
