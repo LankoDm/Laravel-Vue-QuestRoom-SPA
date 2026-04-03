@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import {ref, onMounted, computed, watch} from 'vue';
 import axios from 'axios';
-import { useToastStore } from '@/stores/toast';
+import {useToastStore} from '@/stores/toast';
 
 const toast = useToastStore();
 const bookings = ref([]);
@@ -11,6 +11,19 @@ const dateMode = ref('all');
 const customDate = ref('');
 const isLoading = ref(true);
 const searchQuery = ref('');
+const currentPage = ref(1);
+const itemsPerPage = 20;
+watch([searchQuery, selectedStatuses, dateMode, customDate], () => {
+  currentPage.value = 1;
+}, {deep: true});
+const totalPages = computed(() => {
+  return Math.ceil(filteredBookings.value.length / itemsPerPage) || 1;
+});
+const paginatedBookings = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredBookings.value.slice(start, end);
+});
 const fetchBookings = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/bookings');
@@ -134,7 +147,7 @@ onMounted(() => {
         .listen('.booking.created', (e) => {
           const index = bookings.value.findIndex(b => b.id === e.booking.id);
           if (index !== -1) {
-            bookings.value.splice(index, 1, { ...bookings.value[index], ...e.booking });
+            bookings.value.splice(index, 1, {...bookings.value[index], ...e.booking});
           } else {
             newBookingsQueue.value.push(e.booking);
           }
@@ -142,7 +155,7 @@ onMounted(() => {
         .listen('.booking.updated', (e) => {
           const index = bookings.value.findIndex(b => b.id === e.booking.id);
           if (index !== -1) {
-            bookings.value.splice(index, 1, { ...bookings.value[index], ...e.booking });
+            bookings.value.splice(index, 1, {...bookings.value[index], ...e.booking});
           }
         });
   }
@@ -157,10 +170,18 @@ onMounted(() => {
         <div class="relative w-full md:w-64">
           <input v-model="searchQuery" type="text" placeholder="Пошук клієнта..."
                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-white font-medium shadow-sm">
-          <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor"
+               viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
         </div>
-        <button @click="fetchBookings" class="p-3 bg-white text-primary shadow-sm border border-secondary hover:bg-secondary rounded-xl transition-colors shrink-0">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        <button @click="fetchBookings"
+                class="p-3 bg-white text-primary shadow-sm border border-secondary hover:bg-secondary rounded-xl transition-colors shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
         </button>
       </div>
     </div>
@@ -168,22 +189,26 @@ onMounted(() => {
       <span class="text-sm font-bold text-gray-400 uppercase tracking-wider mr-2">Показати:</span>
 
       <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-        <input type="checkbox" value="pending" v-model="selectedStatuses" class="w-4 h-4 text-yellow-500 rounded border-gray-300 focus:ring-yellow-500">
+        <input type="checkbox" value="pending" v-model="selectedStatuses"
+               class="w-4 h-4 text-yellow-500 rounded border-gray-300 focus:ring-yellow-500">
         <span class="text-sm font-bold text-yellow-700">Очікує</span>
       </label>
 
       <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-        <input type="checkbox" value="confirmed" v-model="selectedStatuses" class="w-4 h-4 text-green-500 rounded border-gray-300 focus:ring-green-500">
+        <input type="checkbox" value="confirmed" v-model="selectedStatuses"
+               class="w-4 h-4 text-green-500 rounded border-gray-300 focus:ring-green-500">
         <span class="text-sm font-bold text-green-700">Підтверджено</span>
       </label>
 
       <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-        <input type="checkbox" value="finished" v-model="selectedStatuses" class="w-4 h-4 text-blue-500 rounded border-gray-300 focus:ring-blue-500">
+        <input type="checkbox" value="finished" v-model="selectedStatuses"
+               class="w-4 h-4 text-blue-500 rounded border-gray-300 focus:ring-blue-500">
         <span class="text-sm font-bold text-blue-700">Завершено</span>
       </label>
 
       <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-        <input type="checkbox" value="cancelled" v-model="selectedStatuses" class="w-4 h-4 text-red-500 rounded border-gray-300 focus:ring-red-500">
+        <input type="checkbox" value="cancelled" v-model="selectedStatuses"
+               class="w-4 h-4 text-red-500 rounded border-gray-300 focus:ring-red-500">
         <span class="text-sm font-bold text-red-700">Скасовано</span>
       </label>
     </div>
@@ -191,15 +216,18 @@ onMounted(() => {
       <span class="text-sm font-bold text-gray-400 uppercase tracking-wider mr-2">Дата:</span>
 
       <label class="flex items-center gap-2 cursor-pointer hover:opacity-80">
-        <input type="radio" value="all" v-model="dateMode" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+        <input type="radio" value="all" v-model="dateMode"
+               class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
         <span class="text-sm font-bold text-text">Всі дні</span>
       </label>
       <label class="flex items-center gap-2 cursor-pointer hover:opacity-80">
-        <input type="radio" value="today" v-model="dateMode" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+        <input type="radio" value="today" v-model="dateMode"
+               class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
         <span class="text-sm font-bold text-text">За сьогодні</span>
       </label>
       <label class="flex items-center gap-2 cursor-pointer hover:opacity-80">
-        <input type="radio" value="custom" v-model="dateMode" class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+        <input type="radio" value="custom" v-model="dateMode"
+               class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
         <span class="text-sm font-bold text-text">Обрати день:</span>
       </label>
 
@@ -207,8 +235,12 @@ onMounted(() => {
              class="px-3 py-1.5 rounded-lg border border-secondary text-sm font-bold text-text outline-none focus:border-primary focus:ring-1 focus:ring-primary">
     </div>
     <div v-if="newBookingsQueue.length > 0" class="mb-4 flex justify-center">
-      <button @click="applyNewBookings" class="flex items-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 px-6 py-2.5 rounded-full font-bold shadow-sm hover:bg-blue-600 hover:text-white transition-all duration-300">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+      <button @click="applyNewBookings"
+              class="flex items-center gap-2 bg-blue-50 text-blue-600 border border-blue-200 px-6 py-2.5 rounded-full font-bold shadow-sm hover:bg-blue-600 hover:text-white transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
         Завантажити нові бронювання ({{ newBookingsQueue.length }})
       </button>
     </div>
@@ -227,10 +259,13 @@ onMounted(() => {
         </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-        <tr v-for="b in filteredBookings" :key="b.id" class="hover:bg-gray-50">
+        <tr v-for="b in paginatedBookings" :key="b.id" class="hover:bg-gray-50">
           <td class="p-4 pl-6 min-w-[140px]">
             <div class="text-xs text-gray-500 font-bold mb-0.5">{{ formatDateTime(b.start_time) }}</div>
-            <div class="font-black text-primary text-sm">{{ formatTime(b.start_time) }} - {{ formatTime(b.end_time) }}</div>
+            <div class="font-black text-primary text-sm">{{ formatTime(b.start_time) }} - {{
+                formatTime(b.end_time)
+              }}
+            </div>
             <div class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">#{{ b.id }}</div>
           </td>
           <td class="p-4 font-bold text-text">
@@ -249,26 +284,61 @@ onMounted(() => {
             </div>
           </td>
           <td class="p-4">
-              <span class="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider" :class="statusClasses[b.status]">
+              <span class="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider"
+                    :class="statusClasses[b.status]">
                 {{ statusNames[b.status] || b.status }}
               </span>
           </td>
           <td class="p-4 text-center">
             <div class="flex justify-center gap-2">
-              <button v-if="b.status === 'pending'" @click="confirmBooking(b.id)" class="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm" title="Підтвердити">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <button v-if="b.status === 'pending'" @click="confirmBooking(b.id)"
+                      class="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
+                      title="Підтвердити">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
               </button>
-              <button v-if="b.status === 'confirmed'" @click="finishBooking(b.id)" class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Позначити як завершене">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <button v-if="b.status === 'confirmed'" @click="finishBooking(b.id)"
+                      class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                      title="Позначити як завершене">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
               </button>
-              <button v-if="b.status !== 'cancelled' && b.status !== 'finished'" @click="cancelBooking(b.id)" class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm" title="Скасувати">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              <button v-if="b.status !== 'cancelled' && b.status !== 'finished'" @click="cancelBooking(b.id)"
+                      class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                      title="Скасувати">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
               </button>
             </div>
           </td>
         </tr>
         </tbody>
       </table>
+      <div v-if="totalPages > 1"
+           class="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 border-t border-secondary bg-gray-50/50">
+        <div class="text-sm font-medium text-gray-500">
+          Показано <span class="font-bold text-text">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> -
+          <span class="font-bold text-text">{{ Math.min(currentPage * itemsPerPage, filteredBookings.length) }}</span>
+          із <span class="font-bold text-text">{{ filteredBookings.length }}</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <button @click="currentPage--" :disabled="currentPage === 1"
+                  class="px-4 py-2 rounded-xl font-bold text-sm transition-colors border"
+                  :class="currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:bg-secondary'">
+            &larr; Попередня
+          </button>
+          <span class="text-sm font-bold text-text">Сторінка {{ currentPage }} з {{ totalPages }}</span>
+          <button @click="currentPage++" :disabled="currentPage === totalPages"
+                  class="px-4 py-2 rounded-xl font-bold text-sm transition-colors border"
+                  :class="currentPage === totalPages ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:bg-secondary'">
+            Наступна &rarr;
+          </button>
+        </div>
+      </div>
       <div v-if="filteredBookings.length === 0" class="p-8 text-center text-gray-500 font-medium">
         Бронювань не знайдено.
       </div>
