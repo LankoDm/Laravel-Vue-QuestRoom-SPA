@@ -71,12 +71,12 @@ const router = createRouter({
     {
       path: '/manager',
       component: ManagerLayout,
-      beforeEnter: (to, from, next) => {
+      beforeEnter: (to, from) => {
         const authStore = useAuthStore();
         if (authStore.user && (authStore.user.role === 'manager' || authStore.user.role === 'admin')) {
-          next();
+          return true;
         } else {
-          next({ name: 'not-found' });
+          return { name: 'not-found' };
         }
       },
       children: [
@@ -92,7 +92,7 @@ const router = createRouter({
   ]
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, from) => {
   const authStore = useAuthStore();
 
   if (authStore.token && !authStore.user) {
@@ -100,18 +100,18 @@ router.beforeEach(async (to, from, next) => {
   }
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
-      return next({ name: 'login' });
+      return { name: 'login' };
     }
     if (to.meta.role && authStore.user?.role !== to.meta.role) {
-      return next({ name: 'not-found' });
+      return { name: 'not-found' };
     }
   }
   const guestOnlyRoutes = ['login', 'register', 'forgot-password', 'reset-password'];
   if (guestOnlyRoutes.includes(to.name) && authStore.isAuthenticated) {
-    return next({ name: 'home' });
+    return { name: 'home' };
   }
 
-  next();
+  return true;
 });
 
 export default router

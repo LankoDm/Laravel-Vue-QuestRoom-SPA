@@ -6,6 +6,14 @@ import axios from 'axios';
 
 const authStore = useAuthStore();
 const footerRooms = ref([]);
+const isMobileMenuOpen = ref(false);
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value;
+};
+
+const closeMobileMenu = () => {
+  isMobileMenuOpen.value = false;
+};
 onMounted(async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/rooms');
@@ -73,8 +81,33 @@ onMounted(async () => {
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
             </button>
           </template>
+          <button @click="toggleMobileMenu" class="md:hidden p-2 text-gray-500 hover:text-primary focus:outline-none ml-2">
+            <svg v-if="!isMobileMenuOpen" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            <svg v-else class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
         </div>
 
+      </div>
+      <div v-show="isMobileMenuOpen" class="md:hidden absolute top-20 left-0 w-full bg-white border-b border-secondary shadow-2xl z-40 origin-top animate-dropdown">
+        <nav class="flex flex-col px-6 py-6 space-y-4">
+          <RouterLink @click="closeMobileMenu" :to="{ name: 'home' }" exact-active-class="text-primary" class="text-xl font-bold text-gray-600 hover:text-primary">
+            Каталог
+          </RouterLink>
+          <RouterLink @click="closeMobileMenu" :to="{ name: 'about' }" exact-active-class="text-primary" class="text-xl font-bold text-gray-600 hover:text-primary">
+            Про нас
+          </RouterLink>
+          <RouterLink @click="closeMobileMenu" :to="{ name: 'contacts' }" exact-active-class="text-primary" class="text-xl font-bold text-gray-600 hover:text-primary">
+            Контакти
+          </RouterLink>
+          <div v-if="authStore.isAdmin || authStore.isManager" class="border-t border-gray-100 my-2 pt-4 space-y-4">
+            <RouterLink v-if="authStore.isAdmin" @click="closeMobileMenu" to="/admin" class="block text-xl font-bold text-red-500">
+              Адмін-панель
+            </RouterLink>
+            <RouterLink v-if="authStore.isManager" @click="closeMobileMenu" to="/manager" class="block text-xl font-bold text-blue-500">
+              Панель менеджера
+            </RouterLink>
+          </div>
+        </nav>
       </div>
     </header>
 
@@ -112,3 +145,12 @@ onMounted(async () => {
 
   </div>
 </template>
+<style scoped>
+@keyframes dropdown {
+  0% { opacity: 0; transform: translateY(-10px) scaleY(0.95); }
+  100% { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+.animate-dropdown {
+  animation: dropdown 0.2s ease-out forwards;
+}
+</style>
