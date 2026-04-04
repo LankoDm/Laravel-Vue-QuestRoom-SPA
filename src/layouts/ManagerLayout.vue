@@ -1,11 +1,20 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { RouterView, RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useToastStore } from '@/stores/toast';
 
 const authStore = useAuthStore();
 const toast = useToastStore();
+const isMobileMenuOpen = ref(false);
+
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value;
+};
+
+const closeMobileMenu = () => {
+  isMobileMenuOpen.value = false;
+};
 
 onMounted(() => {
   if (window.Echo) {
@@ -38,18 +47,24 @@ onUnmounted(() => {
 
 <template>
   <div class="h-screen w-full flex bg-gray-50 font-sans text-text overflow-hidden">
-    <aside class="w-64 h-full shrink-0 bg-white border-r border-secondary flex flex-col shadow-sm hidden md:flex">
-      <div class="h-20 shrink-0 flex items-center px-6 border-b border-secondary">
+    <div v-if="isMobileMenuOpen" @click="closeMobileMenu" class="fixed inset-0 bg-black/20 z-30 md:hidden"></div>
+    <aside
+        :class="isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'"
+        class="w-64 h-full shrink-0 bg-white border-r border-secondary flex flex-col shadow-sm fixed md:relative z-40 transition-transform duration-300 md:translate-x-0">
+      <div class="h-20 shrink-0 flex items-center px-6 border-b border-secondary justify-between">
         <RouterLink :to="{ name: 'home' }" class="text-2xl font-black text-primary tracking-tight">
           Onea<span class="text-text">Manager</span>
         </RouterLink>
+        <button @click="closeMobileMenu" class="md:hidden text-gray-400 hover:text-primary">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
       </div>
       <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-2">
-        <RouterLink to="/manager/bookings" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-secondary/50 hover:text-primary transition-colors font-bold">
+        <RouterLink @click="closeMobileMenu" to="/manager/bookings" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-secondary/50 hover:text-primary transition-colors font-bold">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z"></path></svg>
           Бронювання
         </RouterLink>
-        <RouterLink to="/manager/reviews" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-secondary/50 hover:text-primary transition-colors font-bold">
+        <RouterLink @click="closeMobileMenu" to="/manager/reviews" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-secondary/50 hover:text-primary transition-colors font-bold">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
           Відгуки
         </RouterLink>
@@ -62,14 +77,19 @@ onUnmounted(() => {
         </RouterLink>
       </div>
     </aside>
-    <main class="flex-1 flex flex-col h-full overflow-hidden">
-      <header class="h-20 bg-white border-b border-secondary flex items-center justify-between px-8 shrink-0">
-        <h2 class="text-xl font-bold text-text">Панель Менеджера</h2>
-        <div class="flex items-center gap-4">
-          <span class="text-sm font-medium text-gray-500 font-bold text-primary">
+    <main class="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+      <header class="h-20 bg-white border-b border-secondary flex items-center justify-between px-4 md:px-8 shrink-0">
+        <div class="flex items-center gap-3">
+          <button @click="toggleMobileMenu" class="md:hidden p-2 text-gray-500 hover:text-primary focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          <h2 class="text-lg md:text-xl font-bold text-text truncate">Панель Менеджера</h2>
+        </div>
+        <div class="flex items-center gap-2 md:gap-4 shrink-0">
+          <span class="hidden sm:inline text-sm font-medium text-gray-500 font-bold text-primary">
             {{ authStore.user?.name }}
           </span>
-          <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-black">
+          <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary flex items-center justify-center text-white font-black shrink-0">
             {{ authStore.user?.name?.charAt(0) }}
           </div>
         </div>
