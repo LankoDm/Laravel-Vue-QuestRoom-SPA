@@ -453,7 +453,7 @@ onUnmounted(() => {
                 {{ room.difficulty }}
               </span>
             </div>
-            <h1 class="text-4xl font-black text-text mb-4">{{ room.name }}</h1>
+            <h1 class="text-3xl md:text-4xl font-black text-text mb-4 break-words">{{ room.name }}</h1>
             <div class="flex items-center space-x-6 text-gray-500 font-medium">
               <div class="flex items-center space-x-1 bg-secondary px-2 py-1 rounded-lg">
                 <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
@@ -469,8 +469,8 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
-          <div class="prose max-w-none text-text leading-relaxed">
-            <h2 class="text-2xl font-bold mb-4">Про квест</h2>
+          <div class="prose max-w-none text-text leading-relaxed break-words overflow-hidden">
+            <h2 class="text-xl md:text-2xl font-bold mb-3 md:mb-4">Про квест</h2>
             <p class="whitespace-pre-line">{{ room.description }}</p>
           </div>
           <div v-if="room.hint_phrase" class="bg-gray-50 p-8 rounded-3xl mt-12 shadow-sm border transition-colors duration-300 relative overflow-hidden"
@@ -663,96 +663,96 @@ onUnmounted(() => {
     <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" @click="closeBookingModal">
       <div class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden" @click.stop>
 
-        <div class="bg-primary p-6 text-white flex justify-between items-center relative overflow-hidden">
-          <h3 class="text-2xl font-black relative z-10">Оформлення броні</h3>
+        <div class="bg-primary p-4 md:p-6 text-white flex justify-between items-center relative overflow-hidden gap-2">
+          <h3 class="text-lg md:text-2xl font-black relative z-10 truncate">Оформлення броні</h3>
 
-          <div class="relative z-10 flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-lg border border-white/30" :class="{'animate-pulse text-red-200': timeLeft < 60}">
+          <div class="relative z-10 flex items-center gap-1 md:gap-2 bg-white/20 px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-white/30 shrink-0" :class="{'animate-pulse text-red-200': timeLeft < 60}">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span class="font-black font-mono tracking-wider">{{ formattedTimeLeft }}</span>
+            <span class="text-sm md:text-base font-black font-mono tracking-wider">{{ formattedTimeLeft }}</span>
           </div>
 
-          <button @click="closeBookingModal" class="relative z-10 text-white/70 hover:text-white transition-colors bg-white/10 p-2 rounded-full ml-4">
+          <button @click="closeBookingModal" class="relative z-10 text-white/70 hover:text-white transition-colors bg-white/10 p-1.5 md:p-2 rounded-full shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
-          <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
         </div>
 
-        <div class="p-8 max-h-[85vh] overflow-y-auto custom-scrollbar">
+        <div class="p-4 md:p-8 max-h-[85vh] overflow-y-auto custom-scrollbar">
           <div v-if="errorMessage" class="mb-6 p-3 bg-red-50 text-red-600 rounded-xl border border-red-200 font-bold flex items-start gap-2 shadow-sm text-sm">
             <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span>{{ errorMessage }}</span>
           </div>
-          <form @submit.prevent="submitBooking" class="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <div class="space-y-5">
+          <form @submit.prevent="submitBooking" class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+            <div class="space-y-4 md:space-y-5">
               <h4 class="text-lg font-black text-text border-b border-secondary pb-2">Ваші дані</h4>
 
               <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Ваше ім'я *</label>
+                <label class="block text-sm font-bold text-gray-700 mb-1 md:mb-2">Ваше ім'я *</label>
                 <input v-model="bookingForm.name" type="text" required placeholder="Олександр"
-                       class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors"
+                       class="w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors"
                        :class="validationErrors.guest_name ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
                 <span v-if="validationErrors.guest_name" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_name[0] }}</span>
               </div>
               <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Телефон *</label>
+                <label class="block text-sm font-bold text-gray-700 mb-1 md:mb-2">Телефон *</label>
                 <input v-model="bookingForm.phone"
                        @input="handlePhoneInput"
                        @focus="bookingForm.phone = bookingForm.phone || '+380 '"
                        type="tel" required placeholder="+380 (99) 000-00-00" maxlength="19"
-                       class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors font-bold tracking-wide"
+                       class="w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors font-bold tracking-wide"
                        :class="validationErrors.guest_phone ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
                 <span v-if="validationErrors.guest_phone" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_phone[0] }}</span>
               </div>
               <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Email (для чеку)</label>
+                <label class="block text-sm font-bold text-gray-700 mb-1 md:mb-2">Email (для чеку)</label>
                 <input v-model="bookingForm.email" type="email" placeholder="email@example.com"
-                       class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors"
+                       class="w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl border focus:ring-2 focus:outline-none transition-colors"
                        :class="validationErrors.guest_email ? 'border-red-500 bg-red-50 focus:ring-red-200 text-red-700' : 'border-secondary bg-gray-50 focus:ring-primary'">
                 <span v-if="validationErrors.guest_email" class="text-xs text-red-500 font-bold mt-1 block">{{ validationErrors.guest_email[0] }}</span>
               </div>
               <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Коментар (необов'язково)</label>
+                <label class="block text-sm font-bold text-gray-700 mb-1 md:mb-2">Коментар</label>
                 <textarea v-model="bookingForm.comment" rows="2" placeholder="Наприклад: з нами будуть діти"
-                          class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-gray-50 resize-none"></textarea>
+                          class="w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none transition-colors bg-gray-50 resize-none"></textarea>
               </div>
             </div>
-            <div class="space-y-6 flex flex-col">
+            <div class="space-y-5 md:space-y-6 flex flex-col">
               <h4 class="text-lg font-black text-text border-b border-secondary pb-2">Деталі гри</h4>
-              <div class="bg-secondary/30 p-5 rounded-2xl text-sm text-text font-medium space-y-4 border border-secondary">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-500">Кімната:</span>
-                  <span class="font-bold text-right">{{ room.name }}</span>
+              <div class="bg-secondary/30 p-4 md:p-5 rounded-2xl text-sm text-text font-medium space-y-3 md:space-y-4 border border-secondary">
+                <div class="flex justify-between items-center gap-2">
+                  <span class="text-gray-500 shrink-0">Кімната:</span>
+                  <span class="font-bold text-right truncate">{{ room.name }}</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-500">Дата та час:</span>
-                  <span class="text-primary font-black bg-white px-3 py-1 rounded-lg border border-secondary shadow-sm">{{ selectedSlot.date }} о {{ selectedSlot.time }}</span>
+                <div class="flex justify-between items-center gap-2">
+                  <span class="text-gray-500 shrink-0">Дата та час:</span>
+                  <span class="text-primary font-black bg-white px-2 py-1 md:px-3 md:py-1 rounded-lg border border-secondary shadow-sm text-xs md:text-sm">{{ selectedSlot.date }} о {{ selectedSlot.time }}</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-500">Гравців:</span>
+                <div class="flex justify-between items-center gap-2">
+                  <span class="text-gray-500 shrink-0">Гравців:</span>
                   <select v-model="selectedPlayers"
-                          class="bg-white border border-secondary rounded-lg px-3 py-1.5 font-bold text-text outline-none focus:ring-2 focus:ring-primary cursor-pointer shadow-sm">
+                          class="bg-white border border-secondary rounded-lg px-2 py-1 md:px-3 md:py-1.5 font-bold text-text outline-none focus:ring-2 focus:ring-primary cursor-pointer shadow-sm">
                     <option v-for="n in (room.max_players - room.min_players + 1)" :key="n" :value="room.min_players + n - 1">
                       {{ room.min_players + n - 1 }} чол.
                     </option>
                   </select>
                 </div>
-                <div class="flex justify-between items-center pt-4 border-t border-secondary border-dashed mt-2">
-                  <span class="text-gray-500">До сплати:</span>
-                  <span class="text-3xl font-black text-text">{{ currentPrice }} ₴</span>
+                <div class="flex justify-between items-center pt-3 md:pt-4 border-t border-secondary border-dashed mt-2">
+                  <span class="text-gray-500 shrink-0">До сплати:</span>
+                  <span class="text-2xl md:text-3xl font-black text-text">{{ currentPrice }} ₴</span>
                 </div>
               </div>
               <div class="pt-2">
-                <label class="block text-sm font-bold text-gray-700 mb-3">Спосіб оплати</label>
-                <div class="grid grid-cols-2 gap-3">
-                  <label class="relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all"
+                <label class="block text-sm font-bold text-gray-700 mb-2 md:mb-3">Спосіб оплати</label>
+                <div class="flex flex-col sm:grid sm:grid-cols-2 gap-3">
+                  <label class="relative flex items-center justify-center p-3 md:p-4 rounded-xl border-2 cursor-pointer transition-all"
                          :class="bookingForm.payment_method === 'cash' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-secondary text-gray-500 hover:border-primary'">
                     <input type="radio" v-model="bookingForm.payment_method" value="cash" class="sr-only">
-                    <span class="font-bold">Готівкою на місці</span>
+                    <span class="font-bold text-sm md:text-base">Готівкою на місці</span>
                   </label>
-                  <label class="relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all"
+                  <label class="relative flex items-center justify-center p-3 md:p-4 rounded-xl border-2 cursor-pointer transition-all"
                          :class="bookingForm.payment_method === 'card' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-secondary text-gray-500 hover:border-primary'">
                     <input type="radio" v-model="bookingForm.payment_method" value="card" class="sr-only">
-                    <span class="font-bold">Карткою зараз</span>
+                    <span class="font-bold text-sm md:text-base">Карткою зараз</span>
                   </label>
                 </div>
               </div>
