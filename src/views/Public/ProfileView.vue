@@ -205,22 +205,26 @@ onMounted(fetchMyBookings);
             </div>
             <div class="space-y-4">
               <div v-for="booking in activeBookings" :key="booking.id"
-                   class="bg-white p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:border-primary transition-colors">
-                <div class="flex items-center gap-4">
+                   class="bg-white p-4 sm:p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:border-primary transition-colors">
+                <div class="flex items-center gap-3 sm:gap-4 overflow-hidden w-full sm:w-auto">
                   <img v-if="booking.room?.image_path" :src="getFirstImage(booking.room.image_path)"
-                       class="w-16 h-16 rounded-xl object-cover shrink-0"/>
-                  <div>
-                    <h4 class="font-bold text-lg text-text">{{ booking.room?.name }}</h4>
-                    <p class="text-sm font-bold text-primary">{{ formatDate(booking.start_time) }}</p>
+                       class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover shrink-0"/>
+                  <div class="min-w-0"><h4 class="font-bold text-base sm:text-lg text-text truncate"
+                                           :title="booking.room?.name">
+                    {{ booking.room?.name }}
+                  </h4>
+                    <p class="text-xs sm:text-sm font-bold text-primary">{{ formatDate(booking.start_time) }}</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-4 sm:ml-auto">
-                  <span class="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider"
-                        :class="statusClasses[booking.status]">
+                <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 shrink-0">
+                  <span
+                      class="px-2 py-1 sm:px-3 sm:py-1 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider"
+                      :class="statusClasses[booking.status]">
                     {{ statusNames[booking.status] }}
                   </span>
-                  <button @click="viewDetails(booking.id)" class="text-gray-400 hover:text-primary p-2 cursor-pointer">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <button @click="viewDetails(booking.id)"
+                          class="text-gray-400 hover:text-primary p-2 cursor-pointer bg-gray-50 rounded-lg sm:bg-transparent">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
                   </button>
@@ -235,32 +239,37 @@ onMounted(fetchMyBookings);
             </h3>
             <div class="space-y-4">
               <div v-for="booking in paginatedHistory" :key="booking.id"
-                   class="bg-white p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
-                <div class="flex items-center gap-4">
+                   class="bg-white p-4 sm:p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 opacity-80 hover:opacity-100 transition-opacity">
+                <div class="flex items-center gap-3 sm:gap-4 overflow-hidden w-full sm:w-auto">
                   <img v-if="booking.room?.image_path" :src="getFirstImage(booking.room.image_path)"
                        class="w-12 h-12 rounded-xl object-cover shrink-0 grayscale"/>
-                  <div>
-                    <h4 class="font-bold text-text">{{ booking.room?.name }}</h4>
-                    <p class="text-xs text-gray-500">{{ formatDate(booking.start_time) }}</p>
+                  <div class="min-w-0">
+                    <h4 class="font-bold text-sm sm:text-base text-text truncate" :title="booking.room?.name">
+                      {{ booking.room?.name }}
+                    </h4>
+                    <p class="text-[10px] sm:text-xs text-gray-500">{{ formatDate(booking.start_time) }}</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-4 sm:ml-auto">
-                  <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider"
+                <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 shrink-0">
+                  <span class="px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-wider"
                         :class="statusClasses[booking.status]">
                     {{ statusNames[booking.status] }}
                   </span>
-                  <button v-if="booking.status === 'finished'" @click="openReviewModal(booking)"
-                          class="text-sm font-bold text-primary hover:underline cursor-pointer">
-                    Залишити відгук
-                  </button>
-                  <button @click="viewDetails(booking.id)" class="text-gray-400 hover:text-primary p-2 cursor-pointer">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                    </svg>
-                  </button>
+                  <div class="flex items-center gap-2">
+                    <button v-if="booking.status === 'finished'" @click="openReviewModal(booking)"
+                            class="text-xs sm:text-sm font-bold text-primary hover:underline cursor-pointer bg-primary/10 px-2 py-1 rounded-lg">
+                      Відгук
+                    </button>
+                    <button @click="viewDetails(booking.id)"
+                            class="text-gray-400 hover:text-primary p-1.5 cursor-pointer bg-gray-50 rounded-lg">
+                      <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
               <div v-if="historyTotalPages > 1"
