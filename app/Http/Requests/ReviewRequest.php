@@ -27,4 +27,14 @@ class ReviewRequest extends FormRequest
             'rating' => 'nullable|integer|min:1|max:5',
         ];
     }
+    public function messages(): array
+    {
+        return [
+            'room_id.required' => 'Сталася помилка: не вказано кімнату.',
+            'message.required' => 'Текст відгуку не може бути порожнім.',
+            'message.min' => 'Напишіть хоча б кілька слів про ваші враження.',
+            'rating.min' => 'Мінімальна оцінка - 1 зірка.',
+            'rating.max' => 'Максимальна оцінка - 5 зірок.',
+        ];
+    }
 }
