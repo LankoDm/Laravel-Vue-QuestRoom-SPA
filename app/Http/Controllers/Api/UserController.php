@@ -16,7 +16,7 @@ class UserController extends Controller
         if ($request->has('email') && $request->email !== '') {
             $query->where('email', 'like', '%' . $request->email . '%');
         }
-        $users = $query->latest()->paginate(20);
+        $users = $query->latest()->get();
         return response()->json($users);
     }
 
