@@ -36,7 +36,19 @@ class BookingRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'room_id.required' => 'Будь ласка, оберіть квест-кімнату.',
+            'room_id.exists' => 'Обрана кімната не знайдена.',
+            'start_time.required' => 'Оберіть дату та час гри.',
+            'start_time.after' => 'Час бронювання має бути в майбутньому.',
+            'players_count.required' => 'Вкажіть кількість гравців.',
+            'players_count.min' => 'У грі має брати участь хоча б одна людина.',
+            'guest_name.required' => 'Введіть ваше ім\'я.',
+            'guest_name.max' => 'Ім\'я занадто довге.',
+            'guest_phone.required' => 'Номер телефону обов\'язковий для підтвердження броні.',
             'guest_phone.regex' => 'Номер телефону має бути у форматі +380 (XX) XXX-XX-XX',
+            'guest_email.email' => 'Введіть коректну електронну адресу.',
+            'payment_method.required' => 'Оберіть зручний спосіб оплати.',
+            'payment_method.in' => 'Обрано недопустимий спосіб оплати.',
         ];
     }
 }
