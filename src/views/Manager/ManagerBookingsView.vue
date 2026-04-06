@@ -247,100 +247,103 @@ onMounted(() => {
     <div v-if="isLoading" class="py-20 text-center animate-pulse text-gray-400 font-bold">Завантаження</div>
 
     <div v-else class="bg-white rounded-3xl shadow-sm border border-secondary overflow-hidden">
-      <table class="w-full text-left">
-        <thead class="bg-secondary/30 border-b border-secondary text-gray-500 font-bold text-xs uppercase">
-        <tr>
-          <th class="p-4 pl-6">Час / ID</th>
-          <th class="p-4">Клієнт</th>
-          <th class="p-4">Кімната</th>
-          <th class="p-4">Гравці / Оплата</th>
-          <th class="p-4">Статус</th>
-          <th class="p-4 text-center">Дії</th>
-        </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-        <tr v-for="b in paginatedBookings" :key="b.id" class="hover:bg-gray-50">
-          <td class="p-4 pl-6 min-w-[140px]">
-            <div class="text-xs text-gray-500 font-bold mb-0.5">{{ formatDateTime(b.start_time) }}</div>
-            <div class="font-black text-primary text-sm">{{ formatTime(b.start_time) }} - {{
-                formatTime(b.end_time)
-              }}
-            </div>
-            <div class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">#{{ b.id }}</div>
-          </td>
-          <td class="p-4 font-bold text-text">
-            {{ b.guest_name }}
-            <div class="text-xs text-gray-500 font-medium">{{ b.guest_phone }}</div>
-          </td>
-          <td class="p-4 font-bold">{{ b.room?.name || 'Кімната #' + b.room_id }}</td>
-          <td class="p-4">
-            <div class="font-bold text-text">{{ b.players_count }} гравців</div>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="text-xs text-gray-500 font-bold">{{ formatPrice(b.total_price) }} ₴</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider"
-                    :class="b.payment_method === 'card' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-secondary/30 border-b border-secondary text-gray-500 font-bold text-xs uppercase">
+          <tr>
+            <th class="p-4 pl-6">Час / ID</th>
+            <th class="p-4">Клієнт</th>
+            <th class="p-4">Кімната</th>
+            <th class="p-4">Гравці / Оплата</th>
+            <th class="p-4">Статус</th>
+            <th class="p-4 text-center">Дії</th>
+          </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+          <tr v-for="b in paginatedBookings" :key="b.id" class="hover:bg-gray-50">
+            <td class="p-4 pl-6 min-w-[140px]">
+              <div class="text-xs text-gray-500 font-bold mb-0.5">{{ formatDateTime(b.start_time) }}</div>
+              <div class="font-black text-primary text-sm">{{ formatTime(b.start_time) }} - {{
+                  formatTime(b.end_time)
+                }}
+              </div>
+              <div class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">#{{ b.id }}</div>
+            </td>
+            <td class="p-4 font-bold text-text">
+              {{ b.guest_name }}
+              <div class="text-xs text-gray-500 font-medium">{{ b.guest_phone }}</div>
+            </td>
+            <td class="p-4 font-bold">{{ b.room?.name || 'Кімната #' + b.room_id }}</td>
+            <td class="p-4">
+              <div class="font-bold text-text">{{ b.players_count }} гравців</div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs text-gray-500 font-bold">{{ formatPrice(b.total_price) }} ₴</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider"
+                      :class="b.payment_method === 'card' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'">
                   {{ paymentNames[b.payment_method] || b.payment_method || 'Не вказано' }}
                 </span>
-            </div>
-          </td>
-          <td class="p-4">
+              </div>
+            </td>
+            <td class="p-4">
               <span class="px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider"
                     :class="statusClasses[b.status]">
                 {{ statusNames[b.status] || b.status }}
               </span>
-          </td>
-          <td class="p-4 text-center">
-            <div class="flex justify-center gap-2">
-              <button v-if="b.status === 'pending'" @click="confirmBooking(b.id)"
-                      class="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
-                      title="Підтвердити">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button v-if="b.status === 'confirmed'" @click="finishBooking(b.id)"
-                      class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                      title="Позначити як завершене">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-              </button>
-              <button v-if="b.status !== 'cancelled' && b.status !== 'finished'" @click="cancelBooking(b.id)"
-                      class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                      title="Скасувати">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-      <div v-if="totalPages > 1"
-           class="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 border-t border-secondary bg-gray-50/50">
-        <div class="text-sm font-medium text-gray-500">
-          Показано <span class="font-bold text-text">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> -
-          <span class="font-bold text-text">{{ Math.min(currentPage * itemsPerPage, filteredBookings.length) }}</span>
-          із <span class="font-bold text-text">{{ filteredBookings.length }}</span>
+            </td>
+            <td class="p-4 text-center">
+              <div class="flex justify-center gap-2">
+                <button v-if="b.status === 'pending'" @click="confirmBooking(b.id)"
+                        class="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
+                        title="Підтвердити">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </button>
+                <button v-if="b.status === 'confirmed'" @click="finishBooking(b.id)"
+                        class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                        title="Позначити як завершене">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </button>
+                <button v-if="b.status !== 'cancelled' && b.status !== 'finished'" @click="cancelBooking(b.id)"
+                        class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                        title="Скасувати">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+        <div v-if="totalPages > 1"
+             class="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 border-t border-secondary bg-gray-50/50">
+          <div class="text-sm font-medium text-gray-500">
+            Показано <span class="font-bold text-text">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> -
+            <span class="font-bold text-text">{{ Math.min(currentPage * itemsPerPage, filteredBookings.length) }}</span>
+            із <span class="font-bold text-text">{{ filteredBookings.length }}</span>
+          </div>
+          <div class="flex items-center gap-4">
+            <button @click="currentPage--" :disabled="currentPage === 1"
+                    class="px-4 py-2 rounded-xl font-bold text-sm transition-colors border"
+                    :class="currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:bg-secondary'">
+              &larr; Попередня
+            </button>
+            <span class="text-sm font-bold text-text">Сторінка {{ currentPage }} з {{ totalPages }}</span>
+            <button @click="currentPage++" :disabled="currentPage === totalPages"
+                    class="px-4 py-2 rounded-xl font-bold text-sm transition-colors border"
+                    :class="currentPage === totalPages ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:bg-secondary'">
+              Наступна &rarr;
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-4">
-          <button @click="currentPage--" :disabled="currentPage === 1"
-                  class="px-4 py-2 rounded-xl font-bold text-sm transition-colors border"
-                  :class="currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:bg-secondary'">
-            &larr; Попередня
-          </button>
-          <span class="text-sm font-bold text-text">Сторінка {{ currentPage }} з {{ totalPages }}</span>
-          <button @click="currentPage++" :disabled="currentPage === totalPages"
-                  class="px-4 py-2 rounded-xl font-bold text-sm transition-colors border"
-                  :class="currentPage === totalPages ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:bg-secondary'">
-            Наступна &rarr;
-          </button>
+        <div v-if="filteredBookings.length === 0" class="p-8 text-center text-gray-500 font-medium">
+          Бронювань не знайдено.
         </div>
-      </div>
-      <div v-if="filteredBookings.length === 0" class="p-8 text-center text-gray-500 font-medium">
-        Бронювань не знайдено.
       </div>
     </div>
   </div>
