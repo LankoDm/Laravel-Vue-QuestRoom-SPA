@@ -58,10 +58,30 @@ class RoomRequest extends FormRequest
         ];
     }
 
-//    public function messages(): array //Дописать потом
-//    {
-//        return [
-//
-//        ];
-//    }
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Введіть назву кімнати.',
+            'name.min' => 'Назва має містити щонайменше 5 символів.',
+            'name.max' => 'Назва занадто довга (максимум 35 символів).',
+            'name.unique' => 'Кімната з такою назвою вже існує.',
+            'description.required' => 'Додайте опис кімнати.',
+            'description.min' => 'Опис має бути більш детальним (мінімум 20 символів).',
+            'difficulty.required' => 'Оберіть рівень складності.',
+            'age.required' => 'Вкажіть вікове обмеження.',
+            'image_path.required' => 'Завантажте хоча б одне зображення для обкладинки.',
+            'image_path.max' => 'Можна завантажити не більше 5 зображень.',
+            'image_path.*.image' => 'Один із файлів не є зображенням.',
+            'image_path.*.mimes' => 'Формат зображення має бути: jpeg, png, jpg або webp.',
+            'image_path.*.max' => 'Розмір одного зображення не повинен перевищувати 4 МБ.',
+            'min_players.required' => 'Вкажіть мінімальну кількість гравців.',
+            'max_players.required' => 'Вкажіть максимальну кількість гравців.',
+            'max_players.gte' => 'Максимальна кількість гравців не може бути меншою за мінімальну.',
+            'weekday_price.required' => 'Вкажіть ціну для будніх днів.',
+            'weekend_price.required' => 'Вкажіть ціну для вихідних днів.',
+            'duration_minutes.required' => 'Вкажіть тривалість гри.',
+            'slug.required' => 'Унікальний URL-ідентифікатор (slug) обов\'язковий.',
+            'slug.unique' => 'Цей URL-ідентифікатор вже зайнятий.',
+        ];
+    }
 }
