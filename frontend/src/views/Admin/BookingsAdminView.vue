@@ -95,6 +95,15 @@ const deleteBooking = async (id) => {
     toast.error('Не вдалося видалити бронювання.');
   }
 };
+const updateAdminNote = async (id, note) => {
+  try {
+    await axios.patch(`http://localhost:8080/api/bookings/${id}/note`, { admin_note: note });
+    toast.success('Нотатку збережено');
+  } catch (error) {
+    toast.error('Не вдалося зберегти нотатку');
+    console.error(error);
+  }
+};
 const statusClasses = {
   pending: 'bg-yellow-100 text-yellow-700',
   confirmed: 'bg-green-100 text-green-700',
@@ -189,7 +198,7 @@ onMounted(() => {
             <th class="p-4">Клієнт</th>
             <th class="p-4">Кімната</th>
             <th class="p-4">Гравці / Сума</th>
-            <th class="p-4">Статус</th>
+            <th class="p-4">Нотатка</th> <th class="p-4">Статус</th>
             <th class="p-4 text-center">Дії</th>
           </tr>
           </thead>
@@ -212,6 +221,14 @@ onMounted(() => {
             <td class="p-4">
               <div class="font-bold text-text">{{ booking.players_count }} гравців</div>
               <div class="text-sm text-gray-500">{{ formatPrice(booking.total_price) }} ₴</div>
+            </td>
+            <td class="p-4 min-w-[200px] align-top">
+              <textarea
+                  v-model="booking.admin_note"
+                  @blur="updateAdminNote(booking.id, booking.admin_note)"
+                  placeholder="Нотатка адміна..."
+                  class="w-full text-xs p-2 rounded-lg border border-secondary focus:ring-1 focus:ring-primary outline-none transition-colors bg-gray-50 hover:bg-white resize-none h-12"
+              ></textarea>
             </td>
             <td class="p-4">
                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-wide"

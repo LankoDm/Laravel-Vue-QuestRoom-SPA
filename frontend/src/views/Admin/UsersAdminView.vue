@@ -1,11 +1,25 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import {ref, onMounted, computed, watch} from 'vue';
 import axios from 'axios';
-import { useToastStore } from '@/stores/toast';
+import {useToastStore} from '@/stores/toast';
+
 const toast = useToastStore();
 const users = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
+const currentPage = ref(1);
+const itemsPerPage = 20;
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
+const totalPages = computed(() => {
+  return Math.ceil(users.value.length / itemsPerPage) || 1;
+});
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return users.value.slice(start, end);
+});
 const fetchUsers = async () => {
   isLoading.value = true;
   try {
@@ -21,7 +35,7 @@ const updateRole = async (user, newRole) => {
   const oldRole = user.role;
   user.role = newRole;
   try {
-    await axios.patch(`http://localhost:8080/api/users/${user.id}/role`, { role: newRole });
+    await axios.patch(`http://localhost:8080/api/users/${user.id}/role`, {role: newRole});
   } catch (error) {
     console.error('Помилка оновлення ролі:', error);
     user.role = oldRole;
@@ -50,7 +64,8 @@ onMounted(() => {
               placeholder="Введіть email користувача"
               class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors bg-gray-50">
         </div>
-        <button type="submit" class="bg-primary hover:bg-purple-500 text-white px-8 py-3 rounded-xl font-bold shadow-md transition-colors h-[50px]">
+        <button type="submit"
+                class="bg-primary hover:bg-purple-500 text-white px-8 py-3 rounded-xl font-bold shadow-md transition-colors h-[50px]">
           Знайти
         </button>
       </form>
@@ -71,7 +86,7 @@ onMounted(() => {
           </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-          <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50 transition-colors">
+          <tr v-for="user in paginatedUsers" :key="user.id" class="hover:bg-gray-50 transition-colors">
             <td class="p-4 pl-6">
               <div class="font-bold text-text">#{{ user.id }}</div>
               <div class="font-bold text-primary mt-1">{{ user.name }}</div>
@@ -98,6 +113,27 @@ onMounted(() => {
           </tr>
           </tbody>
         </table>
+      </div>
+      <div v-if="totalPages > 1"
+           class="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 border-t border-secondary bg-gray-50/50">
+        <div class="text-sm font-medium text-gray-500">
+          Показано <span class="font-bold text-text">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> -
+          <span class="font-bold text-text">{{ Math.min(currentPage * itemsPerPage, users.length) }}</span>
+          із <span class="font-bold text-text">{{ users.length }}</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <button @click="currentPage--" :disabled="currentPage === 1"
+                  class="px-4 py-2 rounded-xl font-bold text-sm transition-colors border"
+                  :class="currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:bg-secondary'">
+            &larr; Назад
+          </button>
+          <span class="text-sm font-bold text-text">Стор. {{ currentPage }} з {{ totalPages }}</span>
+          <button @click="currentPage++" :disabled="currentPage === totalPages"
+                  class="px-4 py-2 rounded-xl font-bold text-sm transition-colors border"
+                  :class="currentPage === totalPages ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:bg-secondary'">
+            Далі &rarr;
+          </button>
+        </div>
       </div>
       <div v-if="users.length === 0" class="p-8 text-center text-gray-500">
         Користувачів не знайдено.
