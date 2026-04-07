@@ -228,4 +228,8 @@ class BookingController extends Controller
         ]);
         return $pdf->download("Ticket_Onea_Quests_{$booking->id}.pdf");
     }
+    public function updateNote(Request $request, Booking $booking) {
+        $booking->update(['admin_note' => $request->admin_note]);
+        return response()->json(['message' => 'Note updated']);
+    }
 }

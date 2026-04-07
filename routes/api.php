@@ -68,7 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
 
         Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
-
+        Route::patch('/bookings/{booking}/note', [BookingController::class, 'updateNote']);
         Route::get('/admin/stats', [DashboardController::class, 'stats']);
         Route::get('/admin/report/pdf', [DashboardController::class, 'downloadPdfReport']);
     });
