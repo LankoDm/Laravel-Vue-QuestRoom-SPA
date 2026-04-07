@@ -30,6 +30,8 @@ class UserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'role.in' => 'Обрано неіснуючу роль.',
+            'name.required' => 'Ім\'я користувача обов\'язкове.',
             'phone.regex' => 'Номер телефону введено не повністю.',
         ];
     }
