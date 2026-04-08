@@ -78,6 +78,12 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       retries: 3
       timeout: 5s
+  stripe:
+    image: stripe/stripe-cli:latest
+    container_name: quest_stripe
+    command: listen --api-key ${STRIPE_SECRET} --forward-to http://backend:8080/api/webhooks/stripe
+    depends_on:
+      - backend
 
 volumes:
   mysql_data:
