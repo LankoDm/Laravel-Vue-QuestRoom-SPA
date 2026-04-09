@@ -3,65 +3,76 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\BookingRequest;
 use App\Http\Requests\ReviewRequest;
-use App\Models\Review;
-use Illuminate\Http\Request;
-use App\Events\ReviewCreated;
+use App\Services\ReviewService;
+use Illuminate\Http\JsonResponse;
 
 class ReviewController extends Controller
 {
-    public function index(string $roomId){
-        $reviews = Review::with('user:id,name')
-            ->where("room_id", $roomId)
-            ->where('is_approved', true)->get();
+    protected ReviewService $reviewService;
+
+    /**
+     * Inject the ReviewService.
+     */
+    public function __construct(ReviewService $reviewService)
+    {
+        $this->reviewService = $reviewService;
+    }
+
+    /**
+     * Display approved reviews for a specific room.
+     */
+    public function index(string $roomId): JsonResponse
+    {
+        $reviews = $this->reviewService->getApprovedByRoom($roomId);
+
         return response()->json($reviews);
     }
 
-    public function store(ReviewRequest $request){
-        $user = $request->user();
-        $alreadyReviewed = Review::where('user_id', $user->id)->where('room_id', $request->room_id)->exists();
-        if($alreadyReviewed){
-            return response()->json([
-                'message' => 'Ви вже залишали відгук на цю кімнату.'
-            ], 422);
-        }
-        $review = Review::create([
-            'user_id' => $user->id,
-            'room_id' => $request->room_id,
-            'message' => $request->message,
-            'rating' => $request->rating,
-        ]);
-        ReviewCreated::dispatch($review);
+    /**
+     * Store a newly created review.
+     */
+    public function store(ReviewRequest $request): JsonResponse
+    {
+        $review = $this->reviewService->createReview($request->validated(), $request->user());
+
         return response()->json([
             'message' => 'Дякуємо за відгук!',
             'review' => $review
         ], 201);
     }
 
-    public function approve(string $id){
-        $review = Review::findOrFail($id);
-        $review->is_approved = true;
-        $review->save();
+    /**
+     * Approve a specific review.
+     */
+    public function approve(string $id): JsonResponse
+    {
+        $review = $this->reviewService->approveReview($id);
+
         return response()->json([
             'message' => 'Відгук успішно схвалено та опубліковано!',
             'review' => $review
         ]);
     }
 
-    public function destroy(string $id){
-        $review = Review::findOrFail($id);
-        $review->delete();
+    /**
+     * Remove the specified review.
+     */
+    public function destroy(string $id): JsonResponse
+    {
+        $this->reviewService->deleteReview($id);
+
         return response()->json([
             'message' => 'Неприйнятний відгук видалено.'
         ]);
     }
 
-    public function manageIndex(){
-        $reviews = Review::with(['user:id,name', 'room:id,name'])
-            ->orderBy('is_approved', 'asc')
-            ->latest()
-            ->get();
+    /**
+     * Display all reviews for the manager dashboard.
+     */
+    public function manageIndex(): JsonResponse
+    {
+        $reviews = $this->reviewService->getAllForManagement();
 
         return response()->json($reviews);
     }
