@@ -1,4 +1,5 @@
 import { ref, computed, watch } from 'vue';
+import { usePagination } from './usePagination';
 
 /**
  * Composable handling the logic for filtering, searching, and paginating bookings.
@@ -10,13 +11,6 @@ export function useBookingsManager(initialBookings) {
     const selectedStatuses = ref(['pending', 'confirmed', 'finished', 'cancelled']);
     const dateMode = ref('all');
     const customDate = ref('');
-    const currentPage = ref(1);
-    const itemsPerPage = 20;
-
-    // Reset pagination when filters change
-    watch([searchQuery, selectedStatuses, dateMode, customDate], () => {
-        currentPage.value = 1;
-    }, { deep: true });
 
     // Helper function to get local YYYY-MM-DD
     const getLocalYYYYMMDD = (dateObj) => {
@@ -72,14 +66,22 @@ export function useBookingsManager(initialBookings) {
         return result;
     });
 
-    // Pagination logic
-    const totalPages = computed(() => Math.ceil(filteredBookings.value.length / itemsPerPage) || 1);
+    /**
+     * Integrate universal pagination composable.
+     * We specify 20 items per page and rename 'paginatedData' to 'paginatedBookings' for context.
+     */
+    const {
+        currentPage,
+        itemsPerPage,
+        totalPages,
+        paginatedData: paginatedBookings,
+        resetPage
+    } = usePagination(filteredBookings, 20);
 
-    const paginatedBookings = computed(() => {
-        const start = (currentPage.value - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        return filteredBookings.value.slice(start, end);
-    });
+    // Reset pagination to the first page whenever any filter changes
+    watch([searchQuery, selectedStatuses, dateMode, customDate], () => {
+        resetPage();
+    }, { deep: true });
 
     // Dictionaries
     const statusNames = {
