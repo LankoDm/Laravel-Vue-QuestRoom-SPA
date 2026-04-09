@@ -4,125 +4,117 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RoomRequest;
-use App\Http\Resources\RoomResource;
 use App\Models\Room;
+use App\Services\RoomService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class RoomController extends Controller
 {
-    public function index(Request $request)
+    protected RoomService $roomService;
+
+    public function __construct(RoomService $roomService)
     {
-        $query = Room::withAvg(['reviews' => function ($q) {
-            $q->where('is_approved', true);
-        }], 'rating')->withCount(['reviews' => function ($q) {
-            $q->where('is_approved', true);
-        }]);
-        if(!$request->has('show_all')){
-            $query->where('is_active', 1);
-        }
-        if($request->has('difficulty') && !empty($request->difficulty)){
-            $query->whereIn('difficulty', (array) $request->difficulty);
-        }
-        if($request->has('players_count')){
-            $query->where('min_players', '<=', $request->players_count)->where('max_players', '>=', $request->players_count);
-        }
-        if($request->has('search')){
-            $query->where('name', 'like', '%'.$request->search.'%');
-        }
-        if ($request->has('age') && !empty($request->age)) {
-            $ages = (array) $request->age;
-            $query->where(function ($q) use ($ages) {
-                foreach ($ages as $ageStr) {
-                    $minAge = (int) str_replace('+', '', $ageStr);
-                    $q->orWhereRaw("CAST(REPLACE(age, '+', '') AS UNSIGNED) >= ?", [$minAge]);
-                }
-            });
-        }
-        if($request->has('genres') && !empty($request->genres)){
-            $query->whereIn('genre', $request->genres);
-        }
-        if($request->has('sort')){
-            switch ($request->sort) {
-                case 'rating_desc':
-                    $query->orderBy('reviews_avg_rating', 'desc');
-                    break;
-                case 'rating_asc':
-                    $query->orderBy('reviews_avg_rating', 'asc');
-                    break;
-                case 'difficulty_asc':
-                    $query->orderByRaw("FIELD(difficulty, 'easy', 'medium', 'hard', 'ultra hard') ASC");
-                    break;
-                case 'difficulty_desc':
-                    $query->orderByRaw("FIELD(difficulty, 'easy', 'medium', 'hard', 'ultra hard') DESC");
-                    break;
-            }
-        }else{
-            $query->latest();
-        }
-        $rooms = $query->paginate(6);
+        $this->roomService = $roomService;
+    }
+
+    /**
+     * Display a paginated and filtered list of rooms.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $rooms = $this->roomService->getFilteredRooms($request);
+
         return response()->json($rooms);
     }
 
-    public function store(RoomRequest $request)
+    /**
+     * Store a newly created room in storage.
+     */
+    public function store(RoomRequest $request): JsonResponse
     {
-        $validateData = $request->validated();
-        if($request->hasFile('image_path')){
-            $paths = [];
-            foreach ($request->file('image_path') as $file) {
-                $path = $file->store('rooms', 'public');
-                $paths[] = url("storage/{$path}");
-            }
-            $validateData['image_path'] = json_encode($paths);
+        $validatedData = $request->validated();
+
+        if ($request->hasFile('image_path')) {
+            $validatedData['image_path'] = $this->roomService->uploadImages($request->file('image_path'));
         }
-        $room = Room::create($validateData);
+
+        $room = Room::create($validatedData);
+
         return response()->json($room, 201);
     }
 
-    public function show(string $identifier)
+    /**
+     * Display the specified room by Slug or ID.
+     */
+    public function show(string $identifier): JsonResponse
     {
         $room = Room::withAvg(['reviews' => function ($query) {
             $query->where('is_approved', true);
-        }], 'rating')->withCount(['reviews' => function ($query) {
-            $query->where('is_approved', true);
-        }])->with(['bookings' => function ($query) {
-            $query->whereIn('status', ['pending', 'confirmed', 'finished'])
-                ->where('end_time', '>', now());
-        }])->where('slug', $identifier)->orWhere('id', $identifier)->firstOrFail();
+        }], 'rating')
+            ->withCount(['reviews' => function ($query) {
+                $query->where('is_approved', true);
+            }])
+            ->with(['bookings' => function ($query) {
+                $query->whereIn('status', ['pending', 'confirmed', 'finished'])
+                    ->where('end_time', '>', now());
+            }])
+            ->where('slug', $identifier)
+            ->orWhere('id', $identifier)
+            ->firstOrFail();
+
         return response()->json($room);
     }
 
-    public function update(RoomRequest $request, string $id)
+    /**
+     * Update the specified room in storage.
+     */
+    public function update(RoomRequest $request, string $id): JsonResponse
     {
-        $validateData = $request->validated();
+        $validatedData = $request->validated();
         $room = Room::findOrFail($id);
-        if($request->hasFile('image_path')){
-            $paths = [];
-            foreach ($request->file('image_path') as $file) {
-                $path = $file->store('rooms', 'public');
-                $paths[] = url("storage/{$path}");
-            }
-            $validateData['image_path'] = json_encode($paths);
+
+        if ($request->hasFile('image_path')) {
+            // Delete old images before saving new ones to save disk space
+            $this->roomService->deleteOldImages($room->image_path);
+            $validatedData['image_path'] = $this->roomService->uploadImages($request->file('image_path'));
         } else {
-            unset($validateData['image_path']);
+            unset($validatedData['image_path']); // Keep existing images
         }
-        $room->update($validateData);
+
+        $room->update($validatedData);
+
         return response()->json($room, 200);
     }
 
-    public function toggleStatus(Request $request, string $id)
+    /**
+     * Toggle the active status of the room.
+     */
+    public function toggleStatus(Request $request, string $id): JsonResponse
     {
-        $request->validate([
-            'is_active' => 'required|boolean'
-        ]);
+        $request->validate(['is_active' => 'required|boolean']);
+
         $room = Room::findOrFail($id);
-        $room->is_active = $request->is_active;
-        $room->save();
-        return response()->json(['message' => 'Статус оновлено', 'is_active' => $room->is_active]);
+        $room->update(['is_active' => $request->is_active]);
+
+        return response()->json([
+            'message' => 'Статус оновлено',
+            'is_active' => $room->is_active
+        ]);
     }
 
-    public function destroy(string $id)
+    /**
+     * Remove the specified room from storage.
+     */
+    public function destroy(string $id): JsonResponse
     {
-        Room::findOrFail($id)->delete();
+        $room = Room::findOrFail($id);
+
+        // Clean up the disk
+        $this->roomService->deleteOldImages($room->image_path);
+
+        $room->delete();
+
         return response()->json(["message" => "Кімнату успішно видалено."]);
     }
 }
