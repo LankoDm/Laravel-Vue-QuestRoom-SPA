@@ -7,6 +7,10 @@ import RoomGallery from '@/components/Room/RoomGallery.vue';
 import RoomMiniGame from '@/components/Room/RoomMiniGame.vue';
 import RoomSchedule from '@/components/Room/RoomSchedule.vue';
 import RoomBookingModal from '@/components/Room/RoomBookingModal.vue';
+import PaginationControls from '@/components/UI/PaginationControls.vue';
+
+// Import Composables
+import {usePagination} from '@/composables/usePagination';
 
 const route = useRoute();
 const router = useRouter();
@@ -16,6 +20,17 @@ const toast = useToastStore();
 const room = ref(null);
 const reviews = ref([]);
 const isLoading = ref(true);
+
+/**
+ * Initialize universal pagination for reviews.
+ * We display 5 reviews per page to keep the layout clean.
+ */
+const {
+    currentPage: reviewsPage,
+    totalPages: reviewsTotalPages,
+    itemsPerPage: reviewsPerPage,
+    paginatedData: paginatedReviews
+} = usePagination(reviews, 5);
 
 // Booking State
 const selectedPlayers = ref(0);
@@ -157,9 +172,15 @@ onMounted(() => {
                             }}</span>
                         <h1 class="text-3xl md:text-4xl font-black text-text mt-3 mb-4">{{ room.name }}</h1>
                         <div class="flex gap-6 text-gray-500 font-medium">
-                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
                             <span>{{ room.min_players }} - {{ room.max_players }} гравців</span>
-                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
                             <span>{{ room.duration_minutes }} хв гри</span>
                         </div>
                     </div>
@@ -236,7 +257,7 @@ onMounted(() => {
                     відгуків.
                 </div>
                 <div v-else class="space-y-4">
-                    <div v-for="review in reviews" :key="review.id"
+                    <div v-for="review in paginatedReviews" :key="review.id"
                          class="bg-white p-6 rounded-2xl border border-secondary shadow-sm">
                         <div class="flex justify-between items-start mb-2">
                             <div class="font-bold text-text">{{ review.user?.name || 'Гість' }}</div>
@@ -255,6 +276,12 @@ onMounted(() => {
                             }}
                         </div>
                     </div>
+                    <PaginationControls
+                        v-model:current-page="reviewsPage"
+                        :total-pages="reviewsTotalPages"
+                        :total-items="reviews.length"
+                        :items-per-page="reviewsPerPage"
+                    />
                 </div>
             </div>
         </div>

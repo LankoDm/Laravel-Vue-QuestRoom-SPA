@@ -43,8 +43,11 @@ const fetchRoom = async () => {
         const response = await axios.get(`http://localhost:8080/api/rooms/${route.params.id}`);
         const data = response.data.data || response.data;
 
+        // Extract image_path to prevent it from polluting form.value with a string
+        const { image_path, ...roomData } = data;
+
         form.value = {
-            ...data,
+            ...roomData,
             age: data.age || '12+',
             genre: data.genre || '',
             hint_phrase: data.hint_phrase || '',
@@ -53,7 +56,7 @@ const fetchRoom = async () => {
             weekend_price: data.weekend_price / 100,
         };
 
-        imagePreviews.value = parseImagesArray(data.image_path);
+        imagePreviews.value = parseImagesArray(image_path);
     } catch (error) {
         errorMessage.value = 'Не вдалося завантажити дані кімнати';
     } finally {

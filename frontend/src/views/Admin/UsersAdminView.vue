@@ -3,6 +3,7 @@ import {ref, onMounted, watch} from 'vue';
 import axios from 'axios';
 import {useToastStore} from '@/stores/toast';
 import {usePagination} from '@/composables/usePagination';
+import PaginationControls from "@/components/UI/PaginationControls.vue";
 
 const toast = useToastStore();
 
@@ -136,27 +137,12 @@ onMounted(() => fetchUsers());
                     </tbody>
                 </table>
             </div>
-            <div v-if="totalPages > 1"
-                 class="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 border-t border-secondary bg-gray-50/50">
-                <div class="text-sm font-medium text-gray-500">
-                    Показано <span class="font-bold text-text">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> -
-                    <span class="font-bold text-text">{{ Math.min(currentPage * itemsPerPage, users.length) }}</span>
-                    із <span class="font-bold text-text">{{ users.length }}</span>
-                </div>
-                <div class="flex items-center gap-4">
-                    <button @click="currentPage--" :disabled="currentPage === 1"
-                            class="px-4 py-2 rounded-xl font-bold text-sm transition-colors border"
-                            :class="currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:bg-secondary'">
-                        &larr; Назад
-                    </button>
-                    <span class="text-sm font-bold text-text">Стор. {{ currentPage }} з {{ totalPages }}</span>
-                    <button @click="currentPage++" :disabled="currentPage === totalPages"
-                            class="px-4 py-2 rounded-xl font-bold text-sm transition-colors border"
-                            :class="currentPage === totalPages ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-secondary text-primary bg-white hover:bg-secondary'">
-                        Далі &rarr;
-                    </button>
-                </div>
-            </div>
+            <PaginationControls
+                v-model:current-page="currentPage"
+                :total-pages="totalPages"
+                :total-items="users.length"
+                :items-per-page="itemsPerPage"
+            />
             <div v-if="users.length === 0" class="p-8 text-center text-gray-500">
                 Користувачів не знайдено.
             </div>
