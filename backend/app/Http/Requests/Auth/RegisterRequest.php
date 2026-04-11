@@ -27,4 +27,18 @@ class RegisterRequest extends FormRequest
             'password' => 'required|string|min:8|confirmed',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Ім\'я є обов\'язковим.',
+            'name.max' => 'Ім\'я не може перевищувати 255 символів.',
+            'email.required' => 'Email є обов\'язковим.',
+            'email.email' => 'Введіть коректну адресу електронної пошти.',
+            'email.unique' => 'Користувач з таким email вже зареєстрований.',
+            'password.required' => 'Пароль є обов\'язковим.',
+            'password.min' => 'Пароль має містити щонайменше 8 символів.',
+            'password.confirmed' => 'Паролі не співпадають.',
+        ];
+    }
 }

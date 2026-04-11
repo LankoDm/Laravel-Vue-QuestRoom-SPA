@@ -3,37 +3,44 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class PasswordResetController extends Controller
 {
-    public function sendResetLinkEmail(Request $request)
+    protected AuthService $authService;
+
+    /**
+     * Inject the AuthService.
+     */
+    public function __construct(AuthService $authService)
     {
-        $request->validate(['email' => 'required|email|exists:users,email']);
-        $status = Password::sendResetLink($request->only('email'));
+        $this->authService = $authService;
+    }
+
+    /**
+     * Handle the incoming request to send a password reset link.
+     */
+    public function sendResetLinkEmail(ForgotPasswordRequest $request): JsonResponse
+    {
+        $status = $this->authService->sendResetLink($request->validated());
+
         return $status === Password::RESET_LINK_SENT
             ? response()->json(['message' => 'Посилання для відновлення пароля відправлено на ваш email.'])
             : response()->json(['message' => 'Не вдалося відправити лист. Спробуйте пізніше.'], 400);
     }
-    public function reset(Request $request)
+
+    /**
+     * Handle the incoming request to reset the user's password.
+     */
+    public function reset(ResetPasswordRequest $request): JsonResponse
     {
-        $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:8|confirmed',
-        ]);
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password)
-                ])->setRememberToken(Str::random(60));
-                $user->save();
-            }
-        );
+        $status = $this->authService->resetPassword($request->validated());
+
         return $status === Password::PASSWORD_RESET
             ? response()->json(['message' => 'Ваш пароль успішно змінено.'])
             : response()->json(['message' => 'Невірний токен або email.'], 400);

@@ -4,7 +4,7 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ResetPasswordRequest extends FormRequest
+class ForgotPasswordRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,21 +22,16 @@ class ResetPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|string|min:8|confirmed',
+            'email' => 'required|email|exists:users,email',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'token.required' => 'Відсутній токен скидання пароля. Будь ласка, перейдіть за посиланням з листа ще раз.',
             'email.required' => 'Email є обов\'язковим.',
             'email.email' => 'Введіть коректну адресу електронної пошти.',
-            'password.required' => 'Пароль є обов\'язковим.',
-            'password.min' => 'Новий пароль має містити щонайменше 8 символів.',
-            'password.confirmed' => 'Паролі не співпадають.',
+            'email.exists' => 'Користувача з таким email не знайдено в системі.',
         ];
     }
 }

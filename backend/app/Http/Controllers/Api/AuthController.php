@@ -5,85 +5,106 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
-use App\Models\User;
-use Exception;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
-use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request){
-        $validatedData = $request->validated();
-        $user = User::create([
-            'name' => $validatedData['name'],
-            'email' => $validatedData['email'],
-            'password' => Hash::make($validatedData['password']),
-        ]);
-        $token = $user->createToken('auth_token')->plainTextToken;
+    protected AuthService $authService;
+
+    /**
+     * Inject the AuthService.
+     */
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
+    /**
+     * Handle incoming registration requests.
+     */
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        $result = $this->authService->register($request->validated());
+
         return response()->json([
             'message' => 'Реєстрація успішна',
-            'user' => $user,
-            'token' => $token
+            'user' => $result['user'],
+            'token' => $result['token']
         ], 201);
     }
 
-    public function login(LoginRequest $request){
-        $validatedData = $request->validated();
-        $user = User::where('email', $validatedData['email'])->first();
-        if(!$user || !Hash::check($validatedData['password'], $user->password)){
+    /**
+     * Handle incoming login requests with Brute Force protection.
+     */
+    public function login(LoginRequest $request): JsonResponse
+    {
+        // Generate a unique throttle key based on email and IP address
+        $throttleKey = Str::transliterate(Str::lower($request->input('email')) . '|' . $request->ip());
+
+        // Check if the user has exceeded the maximum number of login attempts (5 attempts)
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return response()->json([
+                'message' => 'Забагато спроб входу. Спробуйте через ' . $seconds . ' секунд.'
+            ], 429);
+        }
+
+        $result = $this->authService->login($request->validated());
+
+        if (!$result) {
+            // Record a failed login attempt
+            RateLimiter::hit($throttleKey);
+
             return response()->json([
                 'message' => 'Невірний email або пароль'
             ], 401);
         }
-        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Clear login attempts upon successful authentication
+        RateLimiter::clear($throttleKey);
+
         return response()->json([
             'message' => 'Ви успішно увійшли',
-            'user' => $user,
-            'token' => $token
+            'user' => $result['user'],
+            'token' => $result['token']
         ]);
     }
 
-    public function logout(Request $request){
-        $request->user()->currentAccessToken()->delete();
+    /**
+     * Destroy an authenticated session.
+     */
+    public function logout(Request $request): JsonResponse
+    {
+        $this->authService->logout($request->user());
+
         return response()->json([
             'message' => 'Ви успішно вийшли з системи'
         ]);
     }
 
-    public function redirectToGoogle() //віддає фронтенду посилання на гугл
+    /**
+     * Provide the Google OAuth redirect URL to the frontend.
+     */
+    public function redirectToGoogle(): JsonResponse
     {
         return response()->json([
-            'url' => Socialite::driver('google')->stateless()->redirect()->getTargetUrl()
+            'url' => $this->authService->getGoogleRedirectUrl()
         ]);
     }
 
-    public function handleGoogleCallback() //гугл повертає користувача сюди
+    /**
+     * Handle the callback from Google and redirect back to the frontend.
+     */
+    public function handleGoogleCallback(): RedirectResponse
     {
-        try {
-            $googleUser = Socialite::driver('google')->stateless()->user();
-            $user = User::where('email', $googleUser->getEmail())->first();
-            if ($user) {
-                if (!$user->google_id) {
-                    $user->update([
-                        'google_id' => $googleUser->getId()
-                    ]);
-                }
-            } else {
-                $user = User::create([
-                    'name' => $googleUser->getName(),
-                    'email' => $googleUser->getEmail(),
-                    'google_id' => $googleUser->getId(),
-                    'password' => null
-                ]);
-            }
-            $token = $user->createToken('auth_token')->plainTextToken;
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
-            return redirect()->away($frontendUrl . '/auth/callback?token=' . $token);
-        } catch (Exception $e) {
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
-            return redirect()->away($frontendUrl . '/login?error=google_auth_failed');
-        }
+        $redirectUrl = $this->authService->handleGoogleCallback();
+
+        return redirect()->away($redirectUrl);
     }
 }

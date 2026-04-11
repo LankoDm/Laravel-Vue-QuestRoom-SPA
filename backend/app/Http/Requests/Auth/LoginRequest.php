@@ -26,4 +26,13 @@ class LoginRequest extends FormRequest
             'password' => 'required',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'Email є обов\'язковим для заповнення.',
+            'email.email' => 'Введіть коректну адресу електронної пошти.',
+            'password.required' => 'Пароль є обов\'язковим для заповнення.',
+        ];
+    }
 }
