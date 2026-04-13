@@ -6,7 +6,6 @@ use App\Models\Booking;
 use App\Models\Room;
 use App\Models\Review;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 
 class DashboardService
 {
@@ -39,9 +38,9 @@ class DashboardService
         // Generate revenue chart data for the last 7 days
         $last7Days = collect();
         for ($i = 6; $i >= 0; $i--) {
-            $date = clone $today->subDays($i);
+            $date = Carbon::today()->subDays($i);
             $revenue = Booking::whereIn('status', ['confirmed', 'finished'])
-                    ->whereDate('start_time', $date)
+                    ->whereDate('created_at', $date)
                     ->sum('total_price') / 100;
 
             $last7Days->push([

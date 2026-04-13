@@ -9,12 +9,21 @@ use Stripe\Checkout\Session;
 
 class StripePaymentService implements PaymentGatewayInterface
 {
+    /**
+     * Create a Stripe Checkout session URL for the given booking.
+     * Also initializes a pending payment record in the database.
+     *
+     * @param Booking $booking
+     * @return string The Stripe Checkout URL
+     */
     public function createPaymentUrl(Booking $booking): string
     {
-        Stripe::setApiKey(config('services.stripe.secret')); // секретний ключ
+        Stripe::setApiKey(config('services.stripe.secret'));
+
         $customerEmail = $booking->guest_email ?? $booking->user?->email;
         $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
-        $sessionConfig = [ // створюємо сесію в Stripe
+
+        $sessionConfig = [
             'payment_method_types' => ['card'],
             'line_items' => [[
                 'price_data' => [
@@ -34,11 +43,15 @@ class StripePaymentService implements PaymentGatewayInterface
             ],
             'billing_address_collection' => 'auto',
         ];
+
         if ($customerEmail) {
             $sessionConfig['customer_email'] = $customerEmail;
         }
+
         $session = Session::create($sessionConfig);
-        $booking->payment()->updateOrCreate( // зберігаємо транзакцію в БД
+
+        // Store or update the pending transaction in the database
+        $booking->payment()->updateOrCreate(
             ['booking_id' => $booking->id],
             [
                 'transaction_id' => $session->id,
@@ -48,6 +61,7 @@ class StripePaymentService implements PaymentGatewayInterface
                 'payment_method' => 'stripe'
             ]
         );
+
         return $session->url;
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\Booking;
 use App\Events\BookingCreated;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Stripe\Webhook;
 use Stripe\Exception\SignatureVerificationException;
@@ -18,51 +19,82 @@ use Carbon\Carbon;
 
 class StripeWebhookController extends Controller
 {
-    public function handle(Request $request)
+    /**
+     * Handle incoming Stripe webhook events.
+     * Validates the signature and processes checkout session completions.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function handle(Request $request): JsonResponse
     {
         $endpointSecret = config('services.stripe.webhook_secret');
         $payload = $request->getContent();
-        $sigHeader = $request->header('Stripe-Signature'); // Беремо підпис Stripe із заголовків
+        $sigHeader = $request->header('Stripe-Signature');
+
         $event = null;
+
         try {
-            $event = Webhook::constructEvent(
-                $payload, $sigHeader, $endpointSecret
-            );
+            $event = Webhook::constructEvent($payload, $sigHeader, $endpointSecret);
         } catch (UnexpectedValueException $e) {
             return response()->json(['error' => 'Invalid payload'], 400);
         } catch (SignatureVerificationException $e) {
             return response()->json(['error' => 'Invalid signature'], 400);
         }
+
         switch ($event->type) {
             case 'checkout.session.completed':
-                $session = $event->data->object;
-                $bookingId = $session->metadata->booking_id ?? null;
-                if ($bookingId) {
-                    $payment = Payment::where('booking_id', $bookingId)->first();
-                    if ($payment) {
-                        $payment->update([
-                            'status' => 'succeeded',
-                            'transaction_id' => $session->id
-                        ]);
-                    }
-                    $booking = Booking::findOrFail($bookingId);
-                    if ($booking) {
-                        $booking->update(['status' => 'confirmed']);
-                        $booking->load('room');
-                        BookingCreated::dispatch($booking);
-                        $finishTime = Carbon::parse($booking->end_time);
-                        FinishBookingJob::dispatch($booking->id)->delay($finishTime);
-                        $customerEmail = $booking->guest_email ?? $booking->user?->email;
-                        if ($customerEmail) {
-                            Mail::to($customerEmail)->send(new BookingConfirmed($booking));
-                        }
-                    }
-
-                }
+                $this->handleCheckoutSessionCompleted($event->data->object);
                 break;
             default:
-                Log::info('Отримано невідомий тип події від Stripe: ' . $event->type);
+                Log::info('Received unknown Stripe event type: ' . $event->type);
         }
+
         return response()->json(['status' => 'success']);
+    }
+
+    /**
+     * Process a successfully completed checkout session.
+     * Updates payment and booking statuses, dispatches events, and queues emails.
+     *
+     * @param object $session
+     * @return void
+     */
+    private function handleCheckoutSessionCompleted(object $session): void
+    {
+        $bookingId = $session->metadata->booking_id ?? null;
+
+        if (!$bookingId) {
+            return;
+        }
+
+        $payment = Payment::where('booking_id', $bookingId)->first();
+
+        if ($payment) {
+            $payment->update([
+                'status' => 'succeeded',
+                'transaction_id' => $session->id
+            ]);
+        }
+
+        $booking = Booking::find($bookingId);
+
+        if ($booking) {
+            $booking->update(['status' => 'confirmed']);
+            $booking->load('room');
+
+            // Dispatch real-time event for frontend
+            BookingCreated::dispatch($booking);
+
+            // Schedule booking finish job
+            $finishTime = Carbon::parse($booking->end_time);
+            FinishBookingJob::dispatch($booking->id)->delay($finishTime);
+
+            // Queue confirmation email to prevent webhook timeout
+            $customerEmail = $booking->guest_email ?? $booking->user?->email;
+            if ($customerEmail) {
+                Mail::to($customerEmail)->queue(new BookingConfirmed($booking));
+            }
+        }
     }
 }
