@@ -78,7 +78,7 @@ class BookingHoldTest extends TestCase
         $response = $this->postJson('/api/bookings/hold', $payload);
 
         // Verify the request is rejected with a 422 status
-        $response->assertStatus(422)
+        $response->assertStatus(409)
             ->assertJson(['message' => 'На жаль, цей час вже заброньовано іншими гравцями.']);
     }
 }

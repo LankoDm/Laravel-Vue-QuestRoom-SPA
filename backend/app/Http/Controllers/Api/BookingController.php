@@ -62,9 +62,7 @@ class BookingController extends Controller
     {
         $booking = Booking::with(['room'])->findOrFail($id);
 
-        if ($request->user()->id !== $booking->user_id && !$request->user()->isAdmin() && !$request->user()->isManager()) {
-            abort(403, 'Доступ заборонено. Ви не можете дивитися чужі бронювання.');
-        }
+        $this->authorize('view', $booking);
 
         if (in_array($booking->status, ['confirmed', 'finished'])) {
             $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
@@ -79,6 +77,7 @@ class BookingController extends Controller
     public function update(BookingRequest $request, string $id): JsonResponse
     {
         $booking = Booking::findOrFail($id);
+        $this->authorize('update', $booking);
         $booking->update($request->safe()->only(['status', 'admin_note']));
 
         return response()->json($booking);
@@ -91,7 +90,12 @@ class BookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
 
-        $this->bookingService->confirmBooking($booking);
+        $this->authorize('update', $booking);
+        try {
+            $this->bookingService->confirmBooking($booking);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
 
         return response()->json([
             'message' => 'Бронювання підтверджено. Задача на завершення створена.',
@@ -104,7 +108,9 @@ class BookingController extends Controller
      */
     public function bookingCancellation(string $id): JsonResponse
     {
-        Booking::findOrFail($id)->update(['status' => 'cancelled']);
+        $booking = Booking::findOrFail($id);
+        $this->authorize('update', $booking);
+        $booking->update(['status' => 'cancelled']);
 
         return response()->json(['message' => 'Бронювання скасовано.']);
     }
@@ -114,7 +120,9 @@ class BookingController extends Controller
      */
     public function bookingFinish(string $id): JsonResponse
     {
-        Booking::findOrFail($id)->update(['status' => 'finished']);
+        $booking = Booking::findOrFail($id);
+        $this->authorize('update', $booking);
+        $booking->update(['status' => 'finished']);
 
         return response()->json(['message' => 'Бронювання успішно завершено.']);
     }
@@ -124,7 +132,9 @@ class BookingController extends Controller
      */
     public function destroy(string $id): JsonResponse
     {
-        Booking::findOrFail($id)->delete();
+        $booking = Booking::findOrFail($id);
+        $this->authorize('delete', $booking);
+        $booking->delete();
 
         return response()->json(['message' => 'Бронювання видалено.']);
     }

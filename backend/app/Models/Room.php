@@ -27,7 +27,7 @@ class Room extends Model
         'genre',
     ];
 
-    protected $cast = [
+    protected $casts = [
         'is_active' => 'boolean',
         'duration_minutes' => 'integer',
         'weekend_price' => 'integer',

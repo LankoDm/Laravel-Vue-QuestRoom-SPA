@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\DB;
 use App\Events\BookingCreated;
 use App\Jobs\FinishBookingJob;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Exceptions\Booking\TimeConflictException;
+use App\Exceptions\Booking\InvalidPlayerCountException;
+use App\Exceptions\Booking\ActiveBookingLimitException;
+use InvalidArgumentException;
 
 class BookingService
 {
@@ -35,7 +39,7 @@ class BookingService
             $finalPrice = $this->calculatePrice($room, $startTime, $data['players_count']);
 
             if (isset($data['total_price']) && $finalPrice !== (int) $data['total_price']) {
-                abort(409, 'Ціна змінилася через зміну умов. Будь ласка, оновіть сторінку.');
+                throw new TimeConflictException('Ціна змінилася через зміну умов. Будь ласка, оновіть сторінку.');
             }
             $booking = Booking::create([
                 'user_id' => $userId,
@@ -70,7 +74,7 @@ class BookingService
     public function confirmBooking(Booking $booking): void
     {
         if ($booking->status !== 'pending') {
-            abort(400, 'Бронювання вже оброблено');
+            throw new InvalidArgumentException('Бронювання вже оброблено');
         }
 
         $booking->update(['status' => 'confirmed']);
@@ -89,13 +93,13 @@ class BookingService
      */
     public function holdSlot(int $roomId, Carbon $startTime, string $token): void
     {
-        $this->checkTimeConflict($roomId, $startTime, $startTime->copy()->addMinutes(1)); // Quick check
+        $this->checkTimeConflict($roomId, $startTime, $startTime->copy()->addMinutes(1));
 
         $cacheKey = "hold_room_{$roomId}_time_{$startTime->timestamp}";
         $locked = Cache::add($cacheKey, $token, now()->addMinutes(10));
 
         if (!$locked && Cache::get($cacheKey) !== $token) {
-            abort(409, 'Цей час зараз оформлює інший користувач. Спробуйте пізніше або виберіть інший час.');
+            throw new TimeConflictException('Цей час зараз оформлює інший користувач. Спробуйте пізніше або виберіть інший час.');
         }
     }
 
@@ -132,7 +136,7 @@ class BookingService
     private function validatePlayersCount(Room $room, int $playersCount): void
     {
         if ($playersCount < $room->min_players || $playersCount > $room->max_players) {
-            abort(422, "Кількість гравців має бути від {$room->min_players} до {$room->max_players}");
+            throw new InvalidPlayerCountException("Кількість гравців має бути від {$room->min_players} до {$room->max_players}");
         }
     }
 
@@ -156,7 +160,7 @@ class BookingService
             })->count();
 
         if ($activeBookingsCount >= 2) {
-            abort(429, 'Ви вже маєте 2 активних бронювання. Щоб забронювати більше ігор, зателевонуйте нам.');
+            throw new ActiveBookingLimitException('Ви вже маєте 2 активних бронювання. Щоб забронювати більше ігор, зателевонуйте нам.');
         }
     }
 
@@ -169,7 +173,7 @@ class BookingService
         $holder = Cache::get($cacheKey);
 
         if ($holder && $holder !== $token) {
-            abort(409, 'На жаль, хтось інший вже почав оформлювати цей час.');
+            throw new TimeConflictException('На жаль, хтось інший вже почав оформлювати цей час.');
         }
     }
 
@@ -185,7 +189,7 @@ class BookingService
             ->exists();
 
         if ($isConflict) {
-            abort(422, 'На жаль, цей час вже заброньовано іншими гравцями.');
+            throw new TimeConflictException('На жаль, цей час вже заброньовано іншими гравцями.');
         }
     }
 }
