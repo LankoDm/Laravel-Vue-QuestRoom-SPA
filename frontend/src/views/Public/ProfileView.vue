@@ -59,7 +59,7 @@ const {
  */
 const fetchMyBookings = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/user/bookings');
+        const response = await axios.get('/user/bookings');
         let data = response.data.data || response.data;
         bookings.value = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     } catch (error) {
@@ -74,7 +74,7 @@ const fetchMyBookings = async () => {
  */
 const viewDetails = async (id) => {
     try {
-        const response = await axios.get(`http://localhost:8080/api/bookings/${id}`);
+        const response = await axios.get(`/bookings/${id}`);
         selectedBooking.value = response.data.data || response.data;
         isModalOpen.value = true;
     } catch (error) {
@@ -109,7 +109,7 @@ const submitProfileUpdate = async () => {
     }
 
     try {
-        await axios.put('http://localhost:8080/api/user/profile', profileForm.value);
+        await axios.put('/user/profile', profileForm.value);
         await authStore.fetchUser();
         toast.success('Профіль успішно оновлено!');
         isEditProfileModalOpen.value = false;
@@ -120,7 +120,7 @@ const submitProfileUpdate = async () => {
 
 const submitPasswordUpdate = async () => {
     try {
-        await axios.put('http://localhost:8080/api/user/password', passwordForm.value);
+        await axios.put('/user/password', passwordForm.value);
         toast.success('Пароль успішно змінено!');
         isChangePasswordModalOpen.value = false;
         passwordForm.value = {current_password: '', password: '', password_confirmation: ''};
@@ -138,7 +138,7 @@ const openReviewModal = (booking) => {
 
 const submitReview = async () => {
     try {
-        await axios.post('http://localhost:8080/api/reviews', {
+        await axios.post('/reviews', {
             room_id: reviewForm.value.room_id,
             rating: reviewForm.value.rating,
             message: reviewForm.value.message

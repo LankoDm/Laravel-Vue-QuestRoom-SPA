@@ -22,7 +22,7 @@ const {
  */
 const fetchBookings = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/bookings');
+        const response = await axios.get('/bookings');
         let data = response.data.data || response.data;
         // Sort descending by creation date
         bookings.value = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -43,7 +43,7 @@ const deleteBooking = async (id) => {
         return;
     }
     try {
-        await axios.delete(`http://localhost:8080/api/bookings/${id}`);
+        await axios.delete(`/bookings/${id}`);
         bookings.value = bookings.value.filter(b => b.id !== id);
         toast.success('Бронювання успішно видалено');
     } catch (error) {
@@ -59,7 +59,7 @@ const deleteBooking = async (id) => {
  */
 const updateAdminNote = async (id, note) => {
     try {
-        await axios.patch(`http://localhost:8080/api/bookings/${id}/note`, {admin_note: note});
+        await axios.patch(`/bookings/${id}/note`, {admin_note: note});
         toast.success('Нотатку збережено');
     } catch (error) {
         toast.error('Не вдалося зберегти нотатку');

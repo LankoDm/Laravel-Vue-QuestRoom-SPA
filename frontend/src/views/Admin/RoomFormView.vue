@@ -40,20 +40,26 @@ const handleImageUpload = (event) => {
 const fetchRoom = async () => {
     if (!isEditMode.value) return;
     try {
-        const response = await axios.get(`http://localhost:8080/api/rooms/${route.params.id}`);
+        const response = await axios.get(`/rooms/${route.params.id}`);
         const data = response.data.data || response.data;
 
         // Extract image_path to prevent it from polluting form.value with a string
-        const { image_path, ...roomData } = data;
+        const {image_path, ...roomData} = data;
 
         form.value = {
-            ...roomData,
+            name: data.name || '',
+            slug: data.slug || '',
+            description: data.description || '',
+            difficulty: data.difficulty || 'medium',
             age: data.age || '12+',
-            genre: data.genre || '',
             hint_phrase: data.hint_phrase || '',
-            // Convert kopecks to standard currency for the input field
-            weekday_price: data.weekday_price / 100,
-            weekend_price: data.weekend_price / 100,
+            genre: data.genre || '',
+            min_players: data.min_players || 2,
+            max_players: data.max_players || 4,
+            weekday_price: data.weekday_price ? data.weekday_price / 100 : null,
+            weekend_price: data.weekend_price ? data.weekend_price / 100 : null,
+            duration_minutes: data.duration_minutes || 60,
+            is_active: data.is_active !== undefined ? data.is_active : 1
         };
 
         imagePreviews.value = parseImagesArray(image_path);
@@ -75,11 +81,13 @@ const saveRoom = async () => {
     try {
         const formData = new FormData();
         Object.keys(form.value).forEach(key => {
-            // Convert price back to kopecks before sending to API
-            if (key === 'weekday_price' || key === 'weekend_price') {
-                formData.append(key, Math.round(form.value[key] * 100));
-            } else {
-                formData.append(key, form.value[key]);
+            if (form.value[key] !== null && form.value[key] !== undefined) {
+                // Convert price back to kopecks before sending to API
+                if (key === 'weekday_price' || key === 'weekend_price') {
+                    formData.append(key, Math.round(form.value[key] * 100));
+                } else {
+                    formData.append(key, form.value[key]);
+                }
             }
         });
 
@@ -89,11 +97,11 @@ const saveRoom = async () => {
 
         if (isEditMode.value) {
             formData.append('_method', 'PUT');
-            await axios.post(`http://localhost:8080/api/rooms/${route.params.id}`, formData, {
+            await axios.post(`/rooms/${route.params.id}`, formData, {
                 headers: {'Content-Type': 'multipart/form-data'}
             });
         } else {
-            await axios.post('http://localhost:8080/api/rooms', formData, {
+            await axios.post('/rooms', formData, {
                 headers: {'Content-Type': 'multipart/form-data'}
             });
         }

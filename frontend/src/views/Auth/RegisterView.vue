@@ -23,7 +23,7 @@ const isLoading = ref(false);
  */
 const loginWithGoogle = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/auth/google');
+        const response = await axios.get('/auth/google');
         window.location.href = response.data.url;
     } catch (error) {
         console.error('Error initializing Google login:', error);

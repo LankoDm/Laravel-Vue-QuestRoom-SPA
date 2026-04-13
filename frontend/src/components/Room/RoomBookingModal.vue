@@ -2,6 +2,7 @@
 import {ref, computed, watch, onUnmounted} from 'vue';
 import axios from 'axios';
 import {useAuthStore} from '@/stores/auth';
+import {vMaska} from "maska/vue";
 
 const props = defineProps({
     isOpen: {type: Boolean, required: true},
@@ -62,17 +63,6 @@ const startTimer = () => {
 /**
  * Handle input mask for Ukrainian phone numbers.
  */
-const handlePhoneInput = (event) => {
-    let input = event.target.value.replace(/\D/g, '');
-    if (!input.startsWith('380')) input = '380' + input.replace(/^380/, '');
-    input = input.substring(0, 12);
-    let formatted = '+380';
-    if (input.length > 3) formatted += ' (' + input.substring(3, 5);
-    if (input.length > 5) formatted += ') ' + input.substring(5, 8);
-    if (input.length > 8) formatted += '-' + input.substring(8, 10);
-    if (input.length > 10) formatted += '-' + input.substring(10, 12);
-    bookingForm.value.phone = formatted;
-};
 
 /**
  * Final submit to Backend API.
@@ -97,11 +87,11 @@ const submitBooking = async () => {
             hold_token: props.holdToken
         };
 
-        const response = await axios.post('http://localhost:8080/api/bookings', payload);
+        const response = await axios.post('/bookings', payload);
         const createdBooking = response.data;
 
         if (bookingForm.value.payment_method === 'card') {
-            const paymentResponse = await axios.post(`http://localhost:8080/api/bookings/${createdBooking.id}/pay`);
+            const paymentResponse = await axios.post(`/bookings/${createdBooking.id}/pay`);
             window.location.href = paymentResponse.data.url;
             return;
         }
@@ -166,7 +156,9 @@ onUnmounted(() => clearInterval(timerInterval.value));
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Телефон *</label>
-                            <input v-model="bookingForm.phone" @input="handlePhoneInput" type="tel" required
+                            <input v-model="bookingForm.phone" v-maska data-maska="+380 (##) ###-##-##" type="tel"
+                                   required
+                                   placeholder="+380 (__) ___-__-__"
                                    class="w-full px-3 py-2 border rounded-xl font-bold tracking-wide"
                                    :class="validationErrors.guest_phone ? 'border-red-500' : 'border-secondary'">
                         </div>

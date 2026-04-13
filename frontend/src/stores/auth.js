@@ -15,7 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
         if(!token.value) return;
         try {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
-            const response = await axios.get('http://localhost:8080/api/user');
+            const response = await axios.get('/user');
             user.value = response.data;
         }catch(error){
             console.error('Помилка відновлення сесії:', error);
@@ -27,7 +27,7 @@ export const useAuthStore = defineStore('auth', () => {
     };
     const register = async (userData) => {
         try {
-            const response = await axios.post('http://localhost:8080/api/register', userData);
+            const response = await axios.post('/register', userData);
             token.value = response.data.token;
             user.value = response.data.user;
             localStorage.setItem('token', token.value);
@@ -40,7 +40,7 @@ export const useAuthStore = defineStore('auth', () => {
     };
     const login = async (credentials) => {
         try {
-            const response = await axios.post('http://localhost:8080/api/login', credentials);
+            const response = await axios.post('/login', credentials);
             token.value = response.data.token;
             user.value = response.data.user;
             localStorage.setItem('token', token.value);
@@ -55,7 +55,7 @@ export const useAuthStore = defineStore('auth', () => {
     const logout = async () => {
         try {
             if (token.value) {
-                await axios.post('http://localhost:8080/api/logout', {}, {
+                await axios.post('/logout', {}, {
                     headers: { Authorization: `Bearer ${token.value}` }
                 });
             }

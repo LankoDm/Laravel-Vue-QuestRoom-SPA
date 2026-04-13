@@ -57,7 +57,7 @@ const currentPriceKopecks = computed(() => {
  */
 const fetchRoomData = async () => {
     try {
-        const res = await axios.get(`http://localhost:8080/api/rooms/${route.params.slug}`);
+        const res = await axios.get(`/rooms/${route.params.slug}`);
         const fetchedRoom = res.data.data || res.data;
         if (!fetchedRoom.is_active) return router.replace({name: 'not-found'});
 
@@ -65,7 +65,7 @@ const fetchRoomData = async () => {
         if (selectedPlayers.value === 0) selectedPlayers.value = room.value.min_players; // Set default once
 
         // Fetch reviews
-        const revRes = await axios.get(`http://localhost:8080/api/rooms/${room.value.id}/reviews`);
+        const revRes = await axios.get(`/rooms/${room.value.id}/reviews`);
         reviews.value = revRes.data.data || revRes.data;
     } catch (error) {
         if (error.response?.status === 404) router.replace({name: 'not-found'});
@@ -80,7 +80,7 @@ const startBookingProcess = async () => {
     isHoldSubmitting.value = true;
     try {
         const backendStartTime = `${selectedSlot.value.backendDate} ${selectedSlot.value.time}:00`;
-        await axios.post('http://localhost:8080/api/bookings/hold', {
+        await axios.post('/bookings/hold', {
             room_id: room.value.id,
             start_time: backendStartTime,
             hold_token: holdToken.value
@@ -101,7 +101,7 @@ const releaseSlot = () => {
     if (!selectedSlot.value) return;
     try {
         const backendStartTime = `${selectedSlot.value.backendDate} ${selectedSlot.value.time}:00`;
-        axios.post('http://localhost:8080/api/bookings/release', {
+        axios.post('/bookings/release', {
             room_id: room.value.id,
             start_time: backendStartTime,
             hold_token: holdToken.value
@@ -141,7 +141,9 @@ const handleBeforeUnload = () => {
             start_time: `${selectedSlot.value.backendDate} ${selectedSlot.value.time}:00`,
             hold_token: holdToken.value
         });
-        navigator.sendBeacon('http://localhost:8080/api/bookings/release', new Blob([payload], {type: 'application/json'}));
+        const apiUrl = `${import.meta.env.VITE_API_URL}/bookings/release`;
+
+        navigator.sendBeacon(apiUrl, new Blob([payload], {type: 'application/json'}));
     }
 };
 

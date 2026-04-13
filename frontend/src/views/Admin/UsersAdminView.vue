@@ -37,7 +37,7 @@ watch(searchQuery, () => {
 const fetchUsers = async () => {
     isLoading.value = true;
     try {
-        const response = await axios.get(`http://localhost:8080/api/users?email=${searchQuery.value}`);
+        const response = await axios.get(`/users?email=${searchQuery.value}`);
         users.value = response.data.data || response.data;
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -59,7 +59,7 @@ const updateRole = async (user, newRole) => {
     user.role = newRole; // Optimistic update
 
     try {
-        await axios.patch(`http://localhost:8080/api/users/${user.id}/role`, {role: newRole});
+        await axios.patch(`/users/${user.id}/role`, {role: newRole});
         toast.success('Роль успішно оновлено');
     } catch (error) {
         console.error('Error updating role:', error);

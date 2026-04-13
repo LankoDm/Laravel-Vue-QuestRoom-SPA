@@ -18,7 +18,7 @@ const submit = async () => {
     errorMessage.value = '';
 
     try {
-        const response = await axios.post('http://localhost:8080/api/forgot-password', {
+        const response = await axios.post('/forgot-password', {
             email: email.value
         });
         message.value = response.data.message;

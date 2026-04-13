@@ -23,7 +23,7 @@ const {
 const fetchReviews = async () => {
     isLoading.value = true;
     try {
-        const response = await axios.get('http://localhost:8080/api/reviews');
+        const response = await axios.get('/reviews');
         reviews.value = response.data.data || response.data;
     } catch (error) {
         console.error('Помилка завантаження відгуків:', error);
@@ -39,7 +39,7 @@ const fetchReviews = async () => {
  */
 const approveReview = async (id) => {
     try {
-        await axios.patch(`http://localhost:8080/api/reviews/${id}/approve`);
+        await axios.patch(`/reviews/${id}/approve`);
         const review = reviews.value.find(r => r.id === id);
         if (review) {
             review.is_approved = 1; // Update locally
@@ -58,7 +58,7 @@ const deleteReview = async (id) => {
     if (!confirm('Ви впевнені, що хочете видалити цей відгук назавжди?')) return;
 
     try {
-        await axios.delete(`http://localhost:8080/api/reviews/${id}`);
+        await axios.delete(`/reviews/${id}`);
         reviews.value = reviews.value.filter(r => r.id !== id);
         toast.success('Відгук видалено');
     } catch (error) {

@@ -23,7 +23,7 @@ const roomsChartPeriod = ref('all'); // Timeframe filter for the Doughnut chart 
  */
 const fetchStats = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/admin/stats');
+        const response = await axios.get('/admin/stats');
         stats.value = response.data;
     } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -38,7 +38,7 @@ const fetchStats = async () => {
 const downloadPdf = async () => {
     isDownloading.value = true;
     try {
-        const response = await axios.get('http://localhost:8080/api/admin/report/pdf', {
+        const response = await axios.get('/admin/report/pdf', {
             responseType: 'blob',
         });
 

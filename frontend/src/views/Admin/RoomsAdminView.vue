@@ -29,7 +29,7 @@ const fetchRooms = async (page = 1) => {
         const params = {page, show_all: 1};
         if (searchQuery.value) params.search = searchQuery.value;
 
-        const response = await axios.get('http://localhost:8080/api/rooms', {params});
+        const response = await axios.get('/rooms', {params});
         if (response.data && response.data.data) {
             rooms.value = response.data.data;
             currentPage.value = response.data.current_page;
@@ -69,7 +69,7 @@ const toggleStatus = async (room) => {
     room.is_active = room.is_active ? 0 : 1;
 
     try {
-        await axios.patch(`http://localhost:8080/api/rooms/${room.id}/toggle-status`, {is_active: room.is_active});
+        await axios.patch(`/rooms/${room.id}/toggle-status`, {is_active: room.is_active});
         toast.success('Статус успішно змінено');
     } catch (error) {
         room.is_active = originalStatus;
@@ -84,7 +84,7 @@ const deleteRoom = async (id) => {
     if (!confirm('Ви дійсно хочете видалити цю кімнату? Цю дію неможливо скасувати.')) return;
 
     try {
-        await axios.delete(`http://localhost:8080/api/rooms/${id}`);
+        await axios.delete(`/rooms/${id}`);
         rooms.value = rooms.value.filter(room => room.id !== id);
         toast.success('Кімнату видалено');
     } catch (error) {

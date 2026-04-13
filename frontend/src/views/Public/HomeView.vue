@@ -36,7 +36,7 @@ const fetchRooms = async (page = 1) => {
         if (filters.value.age?.length) params.age = filters.value.age;
         if (filters.value.genres?.length) params.genres = filters.value.genres;
 
-        const response = await axios.get('http://localhost:8080/api/rooms', {params});
+        const response = await axios.get('/rooms', {params});
         if (response.data && response.data.data) {
             rooms.value = response.data.data;
             currentPage.value = response.data.current_page;

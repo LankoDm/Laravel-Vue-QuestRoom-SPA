@@ -35,7 +35,7 @@ const submit = async () => {
     errorMessage.value = '';
 
     try {
-        const response = await axios.post('http://localhost:8080/api/reset-password', form.value);
+        const response = await axios.post('/reset-password', form.value);
         message.value = response.data.message;
 
         // Redirect to login after 3 seconds

@@ -22,7 +22,7 @@ const {
  */
 const fetchBookings = async () => {
     try {
-        const response = await axios.get('http://localhost:8080/api/bookings');
+        const response = await axios.get('/bookings');
         let data = response.data.data || response.data;
         // Sort descending by creation date
         bookings.value = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -48,7 +48,7 @@ const applyNewBookings = () => {
 const finishBooking = async (id) => {
     if (!confirm('Позначити це бронювання як завершене?')) return;
     try {
-        await axios.patch(`http://localhost:8080/api/bookings/${id}/finish`);
+        await axios.patch(`/bookings/${id}/finish`);
         const b = bookings.value.find(item => item.id === id);
         if (b) b.status = 'finished';
     } catch (error) {
@@ -63,7 +63,7 @@ const finishBooking = async (id) => {
 const confirmBooking = async (id) => {
     if (!confirm('Підтвердити замовлення?')) return;
     try {
-        await axios.patch(`http://localhost:8080/api/bookings/${id}/confirm`);
+        await axios.patch(`/bookings/${id}/confirm`);
         const b = bookings.value.find(item => item.id === id);
         if (b) b.status = 'confirmed';
     } catch (error) {
@@ -78,7 +78,7 @@ const confirmBooking = async (id) => {
 const cancelBooking = async (id) => {
     if (!confirm('Скасувати це бронювання?')) return;
     try {
-        await axios.patch(`http://localhost:8080/api/bookings/${id}/cancel`);
+        await axios.patch(`/bookings/${id}/cancel`);
         const b = bookings.value.find(item => item.id === id);
         if (b) b.status = 'cancelled';
     } catch (error) {

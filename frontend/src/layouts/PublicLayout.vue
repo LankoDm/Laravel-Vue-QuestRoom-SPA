@@ -16,7 +16,7 @@ const closeMobileMenu = () => {
 };
 onMounted(async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/rooms');
+    const response = await axios.get('/rooms');
     let data = response.data.data || response.data;
     footerRooms.value = data.filter(room => room.is_active);
   } catch (error) {
