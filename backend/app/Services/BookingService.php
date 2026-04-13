@@ -23,7 +23,7 @@ class BookingService
     public function createBooking(array $data, ?int $userId): Booking
     {
         return DB::transaction(function () use ($data, $userId) {
-            $room = Room::findOrFail($data['room_id']);
+            $room = Room::lockForUpdate()->findOrFail($data['room_id']);
             $startTime = Carbon::parse($data['start_time']);
             $endTime = $startTime->copy()->addMinutes($room->duration_minutes);
 
@@ -34,6 +34,9 @@ class BookingService
 
             $finalPrice = $this->calculatePrice($room, $startTime, $data['players_count']);
 
+            if (isset($data['total_price']) && $finalPrice !== (int) $data['total_price']) {
+                abort(409, 'Ціна змінилася через зміну умов. Будь ласка, оновіть сторінку.');
+            }
             $booking = Booking::create([
                 'user_id' => $userId,
                 'room_id' => $room->id,
@@ -179,7 +182,6 @@ class BookingService
             ->where('status', '!=', 'cancelled')
             ->where('start_time', '<', $endTime)
             ->where('end_time', '>', $startTime)
-            ->lockForUpdate()
             ->exists();
 
         if ($isConflict) {
