@@ -45,9 +45,12 @@ class BookingController extends Controller
      */
     public function store(BookingRequest $request): JsonResponse
     {
-        $userId = auth('sanctum')->id(); // returns null if not authenticated
+        $userId = $request->user()?->id;
 
-        $booking = $this->bookingService->createBooking($request->validated() + ['hold_token' => $request->hold_token], $userId);
+        $booking = $this->bookingService->createBooking(
+            $request->validated() + ['hold_token' => $request->hold_token],
+            $userId
+        );
 
         return response()->json($booking, 201);
     }
@@ -59,7 +62,7 @@ class BookingController extends Controller
     {
         $booking = Booking::with(['room'])->findOrFail($id);
 
-        if ($request->user()->id !== $booking->user_id) {
+        if ($request->user()->id !== $booking->user_id && !$request->user()->isAdmin() && !$request->user()->isManager()) {
             abort(403, 'Доступ заборонено. Ви не можете дивитися чужі бронювання.');
         }
 
@@ -76,7 +79,7 @@ class BookingController extends Controller
     public function update(BookingRequest $request, string $id): JsonResponse
     {
         $booking = Booking::findOrFail($id);
-        $booking->update($request->validated()->only('status', 'admin_note'));
+        $booking->update($request->safe()->only(['status', 'admin_note']));
 
         return response()->json($booking);
     }
