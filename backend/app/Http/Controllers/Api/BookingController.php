@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 class BookingController extends Controller
 {
@@ -62,7 +63,7 @@ class BookingController extends Controller
     {
         $booking = Booking::with(['room'])->findOrFail($id);
 
-        $this->authorize('view', $booking);
+        Gate::authorize('view', $booking);
 
         if (in_array($booking->status, ['confirmed', 'finished'])) {
             $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
@@ -77,7 +78,7 @@ class BookingController extends Controller
     public function update(BookingRequest $request, string $id): JsonResponse
     {
         $booking = Booking::findOrFail($id);
-        $this->authorize('update', $booking);
+        Gate::authorize('update', $booking);
         $booking->update($request->safe()->only(['status', 'admin_note']));
 
         return response()->json($booking);
@@ -90,7 +91,7 @@ class BookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
 
-        $this->authorize('update', $booking);
+        Gate::authorize('update', $booking);
         try {
             $this->bookingService->confirmBooking($booking);
         } catch (\InvalidArgumentException $e) {
@@ -109,7 +110,7 @@ class BookingController extends Controller
     public function bookingCancellation(string $id): JsonResponse
     {
         $booking = Booking::findOrFail($id);
-        $this->authorize('update', $booking);
+        Gate::authorize('update', $booking);
         $booking->update(['status' => 'cancelled']);
 
         return response()->json(['message' => 'Бронювання скасовано.']);
@@ -121,7 +122,7 @@ class BookingController extends Controller
     public function bookingFinish(string $id): JsonResponse
     {
         $booking = Booking::findOrFail($id);
-        $this->authorize('update', $booking);
+        Gate::authorize('update', $booking);
         $booking->update(['status' => 'finished']);
 
         return response()->json(['message' => 'Бронювання успішно завершено.']);
@@ -133,7 +134,7 @@ class BookingController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $booking = Booking::findOrFail($id);
-        $this->authorize('delete', $booking);
+        Gate::authorize('delete', $booking);
         $booking->delete();
 
         return response()->json(['message' => 'Бронювання видалено.']);

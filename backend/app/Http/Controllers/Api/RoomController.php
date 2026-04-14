@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RoomRequest;
+use App\Http\Resources\RoomResource;
 use App\Models\Room;
 use App\Services\RoomService;
 use Illuminate\Http\Request;
@@ -47,23 +48,11 @@ class RoomController extends Controller
     /**
      * Display the specified room by Slug or ID.
      */
-    public function show(string $identifier): JsonResponse
+    public function show(string $identifier): RoomResource
     {
-        $room = Room::withAvg(['reviews' => function ($query) {
-            $query->where('is_approved', true);
-        }], 'rating')
-            ->withCount(['reviews' => function ($query) {
-                $query->where('is_approved', true);
-            }])
-            ->with(['bookings' => function ($query) {
-                $query->whereIn('status', ['pending', 'confirmed', 'finished'])
-                    ->where('end_time', '>', now());
-            }])
-            ->where('slug', $identifier)
-            ->orWhere('id', $identifier)
-            ->firstOrFail();
+        $room = $this->roomService->getRoomByIdentifier($identifier);
 
-        return response()->json($room);
+        return new RoomResource($room);
     }
 
     /**

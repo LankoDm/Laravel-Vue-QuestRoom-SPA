@@ -95,8 +95,7 @@ class RoomService
     {
         $paths = [];
         foreach ($files as $file) {
-            $path = $file->store('rooms', 'public');
-            $paths[] = url("storage/{$path}");
+            $paths[] = $file->store('rooms', 'public');
         }
 
         return json_encode($paths);
@@ -113,13 +112,36 @@ class RoomService
 
         $oldPaths = json_decode($imagePathJson, true);
         if (is_array($oldPaths)) {
-            foreach ($oldPaths as $oldUrl) {
-                // Extract the relative path from the full URL (e.g., 'rooms/image.jpg')
-                $relativePath = str_replace(url('storage') . '/', '', $oldUrl);
-                if (Storage::disk('public')->exists($relativePath)) {
-                    Storage::disk('public')->delete($relativePath);
+            foreach ($oldPaths as $path) {
+                if (str_starts_with($path, 'http')) {
+                    $path = str_replace(url('storage') . '/', '', $path);
+                }
+
+                if (Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
                 }
             }
         }
+    }
+
+    /**
+     * Get room by ID or Slug with safe relations loaded.
+     */
+    public function getRoomByIdentifier(string $identifier): Room
+    {
+        return Room::withAvg(['reviews' => function ($query) {
+            $query->where('is_approved', true);
+        }], 'rating')
+            ->withCount(['reviews' => function ($query) {
+                $query->where('is_approved', true);
+            }])
+            ->with(['bookings' => function ($query) {
+                $query->select('id', 'room_id', 'start_time', 'end_time', 'status')
+                    ->whereIn('status', ['pending', 'confirmed', 'finished'])
+                    ->where('end_time', '>', now());
+            }])
+            ->where('slug', $identifier)
+            ->orWhere('id', $identifier)
+            ->firstOrFail();
     }
 }

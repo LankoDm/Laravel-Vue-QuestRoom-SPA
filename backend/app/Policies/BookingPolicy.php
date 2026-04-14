@@ -13,7 +13,7 @@ class BookingPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // Ми обробляємо логіку списку в контролері/сервісі
+        return true;
     }
 
     /**

@@ -14,6 +14,43 @@ class RoomResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        $images = is_string($this->image_path) ? json_decode($this->image_path, true) : $this->image_path;
+
+        $imageUrls = [];
+        if (is_array($images)) {
+            foreach ($images as $path) {
+                $imageUrls[] = str_starts_with($path, 'http') ? $path : asset('storage/' . $path);
+            }
+        }
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'description' => $this->description,
+            'difficulty' => $this->difficulty,
+            'age' => $this->age,
+            'hint_phrase' => $this->hint_phrase,
+            'genre' => $this->genre,
+            'min_players' => $this->min_players,
+            'max_players' => $this->max_players,
+            'weekday_price' => $this->weekday_price,
+            'weekend_price' => $this->weekend_price,
+            'duration_minutes' => $this->duration_minutes,
+            'is_active' => $this->is_active,
+            'image_path' => json_encode($imageUrls),
+
+            'rating' => round($this->reviews_avg_rating ?? 0, 1),
+            'reviews_count' => $this->reviews_count ?? 0,
+
+            'bookings' => $this->whenLoaded('bookings', function () {
+                return $this->bookings->map(function ($booking) {
+                    return [
+                        'id' => $booking->id,
+                        'start_time' => $booking->start_time,
+                        'end_time' => $booking->end_time,
+                    ];
+                });
+            }),
+        ];
     }
 }
