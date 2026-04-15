@@ -11,9 +11,6 @@ class RoomService
 {
     /**
      * Get paginated and filtered rooms.
-     *
-     * @param Request $request
-     * @return LengthAwarePaginator
      */
     public function getFilteredRooms(Request $request): LengthAwarePaginator
     {
@@ -87,9 +84,6 @@ class RoomService
 
     /**
      * Handle the upload of room images and return their URLs.
-     *
-     * @param array $files
-     * @return string JSON encoded array of URLs
      */
     public function uploadImages(array $files): string
     {
@@ -103,8 +97,6 @@ class RoomService
 
     /**
      * Delete old images from storage.
-     * * @param string|null $imagePathJson
-     * @return void
      */
     public function deleteOldImages(?string $imagePathJson): void
     {

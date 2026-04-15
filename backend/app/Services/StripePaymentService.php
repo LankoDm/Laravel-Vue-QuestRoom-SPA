@@ -21,7 +21,7 @@ class StripePaymentService implements PaymentGatewayInterface
         Stripe::setApiKey(config('services.stripe.secret'));
 
         $customerEmail = $booking->guest_email ?? $booking->user?->email;
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
 
         $sessionConfig = [
             'payment_method_types' => ['card'],

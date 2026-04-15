@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\DashboardService;
-use Illuminate\Http\JsonResponse;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class DashboardController extends Controller
 {
@@ -25,7 +26,10 @@ class DashboardController extends Controller
      */
     public function stats(): JsonResponse
     {
+        Gate::authorize('view-dashboard');
+
         $stats = $this->dashboardService->getStats();
+
         return response()->json($stats);
     }
 
@@ -34,6 +38,8 @@ class DashboardController extends Controller
      */
     public function downloadPdfReport(): Response
     {
+        Gate::authorize('view-dashboard');
+
         $data = $this->dashboardService->getPdfReportData();
 
         $pdf = Pdf::loadView('pdf.admin_report', $data);

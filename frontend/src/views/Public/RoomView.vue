@@ -35,7 +35,9 @@ const {
 // Booking State
 const selectedPlayers = ref(0);
 const selectedSlot = ref(null);
-const holdToken = ref(Math.random().toString(36).substring(2, 15));
+const holdToken = ref(sessionStorage.getItem('questroom_hold_token') || Math.random().toString(36).substring(2, 15));
+sessionStorage.setItem('questroom_hold_token', holdToken.value);
+
 const isModalOpen = ref(false);
 const isHoldSubmitting = ref(false);
 
@@ -129,6 +131,11 @@ const handleTimeout = (msg) => {
 const handleBookingSuccess = () => {
     isModalOpen.value = false;
     selectedSlot.value = null;
+    
+    sessionStorage.removeItem('questroom_hold_token');
+    holdToken.value = sessionStorage.getItem('questroom_hold_token') || Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('questroom_hold_token', holdToken.value);
+
     toast.success('Бронювання успішно створено! Очікуйте дзвінка.');
     fetchRoomData();
 };

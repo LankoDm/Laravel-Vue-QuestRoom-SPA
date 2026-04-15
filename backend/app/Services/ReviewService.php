@@ -4,15 +4,13 @@ namespace App\Services;
 
 use App\Models\Review;
 use App\Events\ReviewCreated;
+use App\Exceptions\Review\ReviewAlreadyExistsException;
 use Illuminate\Database\Eloquent\Collection;
 
 class ReviewService
 {
     /**
      * Get all approved reviews for a specific room.
-     *
-     * @param string $roomId
-     * @return Collection
      */
     public function getApprovedByRoom(string $roomId): Collection
     {
@@ -24,8 +22,6 @@ class ReviewService
 
     /**
      * Get all reviews (approved and pending) for the manager dashboard.
-     *
-     * @return Collection
      */
     public function getAllForManagement(): Collection
     {
@@ -37,10 +33,6 @@ class ReviewService
 
     /**
      * Create a new review if the user hasn't reviewed this room yet.
-     *
-     * @param array $data
-     * @param object $user
-     * @return Review
      */
     public function createReview(array $data, object $user): Review
     {
@@ -49,7 +41,7 @@ class ReviewService
             ->exists();
 
         if ($alreadyReviewed) {
-            abort(422, 'Ви вже залишали відгук на цю кімнату.');
+            throw new ReviewAlreadyExistsException('Ви вже залишали відгук на цю кімнату.');
         }
 
         $review = Review::create([
@@ -66,9 +58,6 @@ class ReviewService
 
     /**
      * Approve a pending review.
-     *
-     * @param string $id
-     * @return Review
      */
     public function approveReview(string $id): Review
     {
@@ -80,9 +69,6 @@ class ReviewService
 
     /**
      * Delete a review permanently.
-     *
-     * @param string $id
-     * @return void
      */
     public function deleteReview(string $id): void
     {

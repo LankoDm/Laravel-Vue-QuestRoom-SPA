@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Resources;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BookingRequest;
 use App\Models\Booking;
 use App\Services\BookingService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BookingController extends Controller
 {
@@ -46,7 +47,7 @@ class BookingController extends Controller
      */
     public function store(BookingRequest $request): JsonResponse
     {
-        $userId = $request->user()?->id;
+        $userId = $request->user('sanctum')?->id;
 
         $booking = $this->bookingService->createBooking(
             $request->validated() + ['hold_token' => $request->hold_token],
@@ -203,7 +204,11 @@ class BookingController extends Controller
      */
     public function downloadTicket(Booking $booking)
     {
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.booking_confirmed', [
+        if (!request()->hasValidSignature() && Gate::forUser(request()->user('sanctum'))->denies('view', $booking)) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $pdf = Pdf::loadView('emails.booking_confirmed', [
             'booking' => $booking,
             'isPdf' => true
         ]);
@@ -216,6 +221,8 @@ class BookingController extends Controller
      */
     public function updateNote(Request $request, Booking $booking): JsonResponse
     {
+        Gate::authorize('update', $booking);
+
         $booking->update(['admin_note' => $request->admin_note]);
 
         return response()->json(['message' => 'Note updated']);

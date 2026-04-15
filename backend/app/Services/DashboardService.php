@@ -18,7 +18,7 @@ class DashboardService
     public function getStats(): array
     {
         $now = Carbon::now();
-        $today = clone $now->startOfDay();
+        $today = Carbon::today();
 
         $totalRooms = Room::count();
         $bookingsToday = Booking::whereDate('start_time', $today)->count();
@@ -28,11 +28,11 @@ class DashboardService
         $totalRevenue = Booking::whereIn('status', ['confirmed', 'finished'])->sum('total_price') / 100;
 
         $revenueWeek = Booking::whereIn('status', ['confirmed', 'finished'])
-                ->where('created_at', '>=', clone $now->subDays(7))
+                ->where('created_at', '>=', now()->subDays(7))
                 ->sum('total_price') / 100;
 
         $revenueMonth = Booking::whereIn('status', ['confirmed', 'finished'])
-                ->where('created_at', '>=', clone $now->subDays(30))
+                ->where('created_at', '>=', now()->subDays(30))
                 ->sum('total_price') / 100;
 
         // Generate revenue chart data for the last 7 days
@@ -59,9 +59,9 @@ class DashboardService
         // Generate data for the popularity chart with timeframes
         $roomsPopularity = [
             'all' => $rooms->map(fn($r) => ['name' => $r->name, 'count' => $r->bookings_count]),
-            '30' => Room::withCount(['bookings' => fn($q) => $q->where('created_at', '>=', clone $now->subDays(30))])
+            '30' => Room::withCount(['bookings' => fn($q) => $q->where('created_at', '>=', now()->subDays(30))])
                 ->get()->map(fn($r) => ['name' => $r->name, 'count' => $r->bookings_count]),
-            '7' => Room::withCount(['bookings' => fn($q) => $q->where('created_at', '>=', clone $now->subDays(7))])
+            '7' => Room::withCount(['bookings' => fn($q) => $q->where('created_at', '>=', now()->subDays(7))])
                 ->get()->map(fn($r) => ['name' => $r->name, 'count' => $r->bookings_count]),
         ];
 
@@ -103,9 +103,9 @@ class DashboardService
             'date' => $now->format('d.m.Y H:i'),
             'totalRevenue' => Booking::whereIn('status', ['confirmed', 'finished'])->sum('total_price') / 100,
             'revenueWeek' => Booking::whereIn('status', ['confirmed', 'finished'])
-                    ->where('created_at', '>=', clone $now->subDays(7))->sum('total_price') / 100,
+                    ->where('created_at', '>=', now()->subDays(7))->sum('total_price') / 100,
             'revenueMonth' => Booking::whereIn('status', ['confirmed', 'finished'])
-                    ->where('created_at', '>=', clone $now->subDays(30))->sum('total_price') / 100,
+                    ->where('created_at', '>=', now()->subDays(30))->sum('total_price') / 100,
             'totalBookings' => Booking::whereIn('status', ['confirmed', 'finished'])->count(),
             'mostBooked' => $rooms->sortByDesc('bookings_count')->first(),
             'leastBooked' => $rooms->sortBy('bookings_count')->first(),

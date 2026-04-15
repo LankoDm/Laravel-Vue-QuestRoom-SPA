@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Services\AuthService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
@@ -86,25 +86,5 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Ви успішно вийшли з системи'
         ]);
-    }
-
-    /**
-     * Provide the Google OAuth redirect URL to the frontend.
-     */
-    public function redirectToGoogle(): JsonResponse
-    {
-        return response()->json([
-            'url' => $this->authService->getGoogleRedirectUrl()
-        ]);
-    }
-
-    /**
-     * Handle the callback from Google and redirect back to the frontend.
-     */
-    public function handleGoogleCallback(): RedirectResponse
-    {
-        $redirectUrl = $this->authService->handleGoogleCallback();
-
-        return redirect()->away($redirectUrl);
     }
 }

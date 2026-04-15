@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Resources;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RoomRequest;
 use App\Http\Resources\RoomResource;
 use App\Models\Room;
 use App\Services\RoomService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class RoomController extends Controller
 {
@@ -22,17 +23,17 @@ class RoomController extends Controller
     /**
      * Display a paginated and filtered list of rooms.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
         $rooms = $this->roomService->getFilteredRooms($request);
 
-        return response()->json($rooms);
+        return RoomResource::collection($rooms);
     }
 
     /**
      * Store a newly created room in storage.
      */
-    public function store(RoomRequest $request): JsonResponse
+    public function store(RoomRequest $request): RoomResource
     {
         $validatedData = $request->validated();
 
@@ -42,7 +43,7 @@ class RoomController extends Controller
 
         $room = Room::create($validatedData);
 
-        return response()->json($room, 201);
+        return new RoomResource($room);
     }
 
     /**
@@ -58,7 +59,7 @@ class RoomController extends Controller
     /**
      * Update the specified room in storage.
      */
-    public function update(RoomRequest $request, string $id): JsonResponse
+    public function update(RoomRequest $request, string $id): RoomResource
     {
         $validatedData = $request->validated();
         $room = Room::findOrFail($id);
@@ -73,7 +74,7 @@ class RoomController extends Controller
 
         $room->update($validatedData);
 
-        return response()->json($room, 200);
+        return new RoomResource($room);
     }
 
     /**

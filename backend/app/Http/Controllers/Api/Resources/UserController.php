@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Resources;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRequest;
 use App\Services\UserService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
@@ -22,7 +22,8 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $users = $this->userService->getFilteredUsers($request);
+        $users = $this->userService->getFilteredUsers($request->input('email'));
+
         return response()->json($users);
     }
 

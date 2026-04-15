@@ -1,30 +1,27 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Payments;
 
-use App\Http\Controllers\Controller;
-use App\Models\Payment;
-use App\Models\Booking;
 use App\Events\BookingCreated;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
-use Stripe\Webhook;
-use Stripe\Exception\SignatureVerificationException;
-use UnexpectedValueException;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\BookingConfirmed;
+use App\Http\Controllers\Controller;
 use App\Jobs\FinishBookingJob;
+use App\Mail\BookingConfirmed;
+use App\Models\Booking;
+use App\Models\Payment;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Stripe\Exception\SignatureVerificationException;
+use Stripe\Webhook;
+use UnexpectedValueException;
 
 class StripeWebhookController extends Controller
 {
     /**
      * Handle incoming Stripe webhook events.
      * Validates the signature and processes checkout session completions.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function handle(Request $request): JsonResponse
     {
@@ -56,9 +53,6 @@ class StripeWebhookController extends Controller
     /**
      * Process a successfully completed checkout session.
      * Updates payment and booking statuses, dispatches events, and queues emails.
-     *
-     * @param object $session
-     * @return void
      */
     private function handleCheckoutSessionCompleted(object $session): void
     {

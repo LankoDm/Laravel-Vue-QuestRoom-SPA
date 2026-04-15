@@ -19,10 +19,6 @@ class BookingService
 {
     /**
      * Create a new booking and dispatch events.
-     *
-     * @param array $data
-     * @param int|null $userId
-     * @return Booking
      */
     public function createBooking(array $data, ?int $userId): Booking
     {
@@ -67,9 +63,6 @@ class BookingService
 
     /**
      * Confirm booking and dispatch the finish job.
-     *
-     * @param Booking $booking
-     * @return void
      */
     public function confirmBooking(Booking $booking): void
     {
@@ -85,11 +78,6 @@ class BookingService
 
     /**
      * Hold a specific time slot in cache.
-     *
-     * @param int $roomId
-     * @param Carbon $startTime
-     * @param string $token
-     * @return void
      */
     public function holdSlot(int $roomId, Carbon $startTime, string $token): void
     {
@@ -105,10 +93,6 @@ class BookingService
 
     /**
      * Release a held slot from cache.
-     *
-     * @param int $roomId
-     * @param Carbon $startTime
-     * @return void
      */
     public function releaseHoldToken(int $roomId, Carbon $startTime): void
     {

@@ -81,7 +81,7 @@ class AuthService
      */
     public function handleGoogleCallback(): string
     {
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
 
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();

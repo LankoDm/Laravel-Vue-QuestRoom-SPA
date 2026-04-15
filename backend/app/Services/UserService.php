@@ -11,16 +11,13 @@ class UserService
 {
     /**
      * Get users based on search criteria.
-     *
-     * @param Request $request
-     * @return Collection
      */
-    public function getFilteredUsers(Request $request): Collection
+    public function getFilteredUsers(?string $emailSearch = null): Collection
     {
         $query = User::query();
 
-        if ($request->filled('email')) {
-            $query->where('email', 'like', '%' . $request->email . '%');
+        if ($emailSearch) {
+            $query->where('email', 'like', '%' . $emailSearch . '%');
         }
 
         return $query->latest()->get();
@@ -28,10 +25,6 @@ class UserService
 
     /**
      * Update the role of a specific user.
-     *
-     * @param string $id
-     * @param string $role
-     * @return User
      */
     public function updateRole(string $id, string $role): User
     {
@@ -43,23 +36,16 @@ class UserService
 
     /**
      * Update the authenticated user's profile.
-     *
-     * @param User $user
-     * @param array $data
-     * @return User
      */
     public function updateProfile(User $user, array $data): User
     {
         $user->update($data);
+
         return $user;
     }
 
     /**
      * Update the authenticated user's password.
-     *
-     * @param User $user
-     * @param string $newPassword
-     * @return void
      */
     public function updatePassword(User $user, string $newPassword): void
     {

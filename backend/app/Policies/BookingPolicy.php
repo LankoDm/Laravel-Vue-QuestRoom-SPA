@@ -20,9 +20,17 @@ class BookingPolicy
      * Determine whether the user can view the model.
      * (e.g., in show method)
      */
-    public function view(User $user, Booking $booking): bool
+    public function view(?User $user, Booking $booking): bool
     {
-        return $user->id === $booking->user_id || $user->isAdmin() || $user->isManager();
+        if ($user && ($user->isAdmin() || $user->isManager())) {
+            return true;
+        }
+
+        if ($booking->user_id !== null) {
+            return $user && $user->id === $booking->user_id;
+        }
+
+        return true;
     }
 
     /**

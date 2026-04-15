@@ -1,21 +1,19 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\DashboardController;
-use App\Http\Controllers\Api\PasswordResetController;
-use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Api\ReviewController;
-use App\Http\Controllers\Api\RoomController;
-use App\Http\Controllers\Api\StripeWebhookController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\BookingController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Auth\PasswordResetController;
+use App\Http\Controllers\Api\Auth\SocialAuthController;
+use App\Http\Controllers\Api\Payments\PaymentController;
+use App\Http\Controllers\Api\Payments\StripeWebhookController;
+use App\Http\Controllers\Api\Resources\BookingController;
+use App\Http\Controllers\Api\Resources\ReviewController;
+use App\Http\Controllers\Api\Resources\RoomController;
+use App\Http\Controllers\Api\Resources\UserController;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\CheckManager;
-use App\Models\Room;
-use App\Models\Booking;
-use App\Models\Review;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -31,8 +29,8 @@ Route::post('/bookings/release', [BookingController::class, 'releaseSlot']);
 Route::post('/bookings/{booking}/pay', [PaymentController::class, 'createCheckoutSession']);
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);
 Route::get('/bookings/{booking}/ticket', [BookingController::class, 'downloadTicket'])->name('ticket.download')->middleware('signed');
-Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
-Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
+Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);
+Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
 Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail']);
 Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 Route::middleware('auth:sanctum')->group(function () {
