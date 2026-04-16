@@ -18,16 +18,28 @@ export function useRoomHelpers() {
     };
 
     /**
+     * Helper to format generic image path with the backend's storage URL.
+     */
+    const formatImageUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:8080';
+        return `${baseUrl}/storage/${path}`;
+    };
+
+    /**
      * Safely parses the image path and returns the first image URL.
      */
     const getFirstImage = (imagePath) => {
         if (!imagePath) return null;
-        if (Array.isArray(imagePath)) return imagePath[0];
-        if (typeof imagePath === 'string' && imagePath.startsWith('[')) {
-            try { return JSON.parse(imagePath)[0]; }
-            catch (e) { return imagePath; }
+        let result = imagePath;
+        if (Array.isArray(imagePath)) {
+            result = imagePath[0];
+        } else if (typeof imagePath === 'string' && imagePath.startsWith('[')) {
+            try { result = JSON.parse(imagePath)[0]; }
+            catch (e) { result = imagePath; }
         }
-        return imagePath;
+        return formatImageUrl(result);
     };
 
     /**
@@ -35,12 +47,16 @@ export function useRoomHelpers() {
      */
     const parseImagesArray = (imagePath) => {
         if (!imagePath) return [];
-        if (Array.isArray(imagePath)) return imagePath;
-        if (typeof imagePath === 'string' && imagePath.startsWith('[')) {
-            try { return JSON.parse(imagePath); }
-            catch (e) { return [imagePath]; }
+        let result = [];
+        if (Array.isArray(imagePath)) {
+            result = imagePath;
+        } else if (typeof imagePath === 'string' && imagePath.startsWith('[')) {
+            try { result = JSON.parse(imagePath); }
+            catch (e) { result = [imagePath]; }
+        } else {
+            result = [imagePath];
         }
-        return [imagePath];
+        return result.map(formatImageUrl);
     };
 
     return {
