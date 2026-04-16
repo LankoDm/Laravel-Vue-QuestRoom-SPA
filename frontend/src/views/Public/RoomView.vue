@@ -7,6 +7,7 @@ import RoomGallery from '@/components/Room/RoomGallery.vue';
 import RoomMiniGame from '@/components/Room/RoomMiniGame.vue';
 import RoomSchedule from '@/components/Room/RoomSchedule.vue';
 import RoomBookingModal from '@/components/Room/RoomBookingModal.vue';
+import GuestReviewModal from '@/components/Room/GuestReviewModal.vue';
 import PaginationControls from '@/components/UI/PaginationControls.vue';
 
 // Import Composables
@@ -40,6 +41,9 @@ sessionStorage.setItem('questroom_hold_token', holdToken.value);
 
 const isModalOpen = ref(false);
 const isHoldSubmitting = ref(false);
+
+const isReviewModalOpen = ref(false);
+const reviewTokenUrl = ref('');
 
 // Refs for scrolling
 const calendarSection = ref(null);
@@ -158,6 +162,12 @@ onMounted(() => {
     fetchRoomData();
     window.addEventListener('beforeunload', handleBeforeUnload);
 
+    if (route.query.review_token) {
+        reviewTokenUrl.value = route.query.review_token;
+        isReviewModalOpen.value = true;
+        router.replace({ query: {} });
+    }
+
     if (window.Echo) {
         window.Echo.channel('manager-channel')
             .listen('.booking.created', fetchRoomData)
@@ -269,7 +279,7 @@ onMounted(() => {
                     <div v-for="review in paginatedReviews" :key="review.id"
                          class="bg-white p-6 rounded-2xl border border-secondary shadow-sm">
                         <div class="flex justify-between items-start mb-2">
-                            <div class="font-bold text-text">{{ review.user?.name || 'Гість' }}</div>
+                            <div class="font-bold text-text">{{ review.guest_name || review.user?.name || 'Гість' }}</div>
                             <div class="flex text-yellow-400">
                                 <svg v-for="i in 5" :key="i" class="w-4 h-4"
                                      :class="i <= review.rating ? 'fill-current' : 'text-gray-200 fill-current'"
@@ -306,6 +316,13 @@ onMounted(() => {
             @close="handleModalClose"
             @timeout="handleTimeout"
             @success="handleBookingSuccess"
+        />
+
+        <GuestReviewModal
+            :is-open="isReviewModalOpen"
+            :review-token-url="reviewTokenUrl"
+            @close="isReviewModalOpen = false"
+            @success="() => { isReviewModalOpen = false; fetchRoomData(); }"
         />
     </div>
 </template>

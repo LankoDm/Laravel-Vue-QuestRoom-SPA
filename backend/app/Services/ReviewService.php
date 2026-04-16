@@ -57,6 +57,35 @@ class ReviewService
     }
 
     /**
+     * Create a new guest review based on a booking.
+     */
+    public function createGuestReview(array $data, \App\Models\Booking $booking): Review
+    {
+        $guestName = $data['guest_name'] ?? $booking->guest_name;
+
+        $alreadyReviewed = Review::whereNull('user_id')
+            ->where('room_id', $booking->room_id)
+            ->where('guest_name', $guestName)
+            ->exists();
+
+        if ($alreadyReviewed) {
+            throw new ReviewAlreadyExistsException('Ви вже залишили свій відгук. Дякуємо!');
+        }
+
+        $review = Review::create([
+            'user_id' => null,
+            'guest_name' => $guestName,
+            'room_id' => $booking->room_id,
+            'message' => $data['message'],
+            'rating' => $data['rating'] ?? null,
+        ]);
+
+        ReviewCreated::dispatch($review);
+
+        return $review;
+    }
+
+    /**
      * Approve a pending review.
      */
     public function approveReview(string $id): Review

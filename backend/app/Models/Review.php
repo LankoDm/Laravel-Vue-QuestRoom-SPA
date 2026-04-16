@@ -10,6 +10,7 @@ class Review extends Model
     protected $fillable = [
         'room_id',
         'user_id',
+        'guest_name',
         'message',
         'rating',
         'is_approved',

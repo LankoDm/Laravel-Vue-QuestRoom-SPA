@@ -50,9 +50,6 @@ const fetchUsers = async () => {
 /**
  * Update the role of a specific user.
  * Includes optimistic UI update with a fallback on failure.
- *
- * @param {Object} user - The user object to update.
- * @param {string} newRole - The new role to assign.
  */
 const updateRole = async (user, newRole) => {
     const oldRole = user.role;

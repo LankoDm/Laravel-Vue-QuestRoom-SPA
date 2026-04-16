@@ -13,9 +13,6 @@ class AuthService
 {
     /**
      * Register a new user and generate an access token.
-     *
-     * @param array $data
-     * @return array Contains the User model and plain text token
      */
     public function register(array $data): array
     {
@@ -34,15 +31,17 @@ class AuthService
 
     /**
      * Authenticate a user by email and password.
-     *
-     * @param array $credentials
-     * @return array|null Contains the User model and token, or null if invalid
      */
     public function login(array $credentials): ?array
     {
         $user = User::where('email', $credentials['email'])->first();
 
-        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+        if (!$user) {
+            Hash::check($credentials['password'], '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+            return null;
+        }
+
+        if (!Hash::check($credentials['password'], $user->password)) {
             return null;
         }
 
@@ -55,9 +54,6 @@ class AuthService
 
     /**
      * Revoke the current access token for the user.
-     *
-     * @param User $user
-     * @return void
      */
     public function logout(User $user): void
     {
@@ -66,8 +62,6 @@ class AuthService
 
     /**
      * Get the Google OAuth redirect URL.
-     *
-     * @return string
      */
     public function getGoogleRedirectUrl(): string
     {
@@ -76,21 +70,25 @@ class AuthService
 
     /**
      * Handle the callback from Google OAuth and authenticate/register the user.
-     *
-     * @return string The frontend redirect URL with token or error parameter
      */
     public function handleGoogleCallback(): string
     {
-        $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
+        $frontendUrl = rtrim(config('app.frontend_url', 'http://localhost:5173'), '/');
 
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
+            if (isset($googleUser->user['email_verified']) && !$googleUser->user['email_verified']) {
+                throw new Exception('Google email is not verified.');
+            }
+
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
                 // Link Google ID if the user exists but hasn't linked Google yet
                 if (!$user->google_id) {
                     $user->update(['google_id' => $googleUser->getId()]);
+                } elseif ($user->google_id !== $googleUser->getId()) {
+                    throw new Exception('Email is associated with a different Google account.');
                 }
             } else {
                 // Register a new user via Google
@@ -115,9 +113,6 @@ class AuthService
 
     /**
      * Send a password reset link to the given email.
-     *
-     * @param array $data Contains the user's email
-     * @return string Status constant from Password broker
      */
     public function sendResetLink(array $data): string
     {
@@ -126,9 +121,6 @@ class AuthService
 
     /**
      * Reset the user's password using the provided token and credentials.
-     *
-     * @param array $data Contains email, password, password_confirmation, and token
-     * @return string Status constant from Password broker
      */
     public function resetPassword(array $data): string
     {
@@ -140,6 +132,8 @@ class AuthService
                 ])->setRememberToken(Str::random(60));
 
                 $user->save();
+                
+                $user->tokens()->delete();
             }
         );
     }

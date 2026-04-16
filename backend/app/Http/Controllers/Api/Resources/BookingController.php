@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\RequestReviewMail;
 
 class BookingController extends Controller
 {
@@ -64,10 +66,10 @@ class BookingController extends Controller
     {
         $booking = Booking::with(['room'])->findOrFail($id);
 
-        Gate::authorize('view', $booking);
+        Gate::forUser($request->user('sanctum'))->authorize('view', $booking);
 
         if (in_array($booking->status, ['confirmed', 'finished'])) {
-            $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
+            $booking->ticket_url = "/api/bookings/{$booking->id}/ticket";
         }
 
         return response()->json($booking);
@@ -124,7 +126,19 @@ class BookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
         Gate::authorize('update', $booking);
+        
+        // Prevent double sending if already finished
+        if ($booking->status === 'finished') {
+            return response()->json(['message' => 'Бронювання вже завершено.']);
+        }
+        
         $booking->update(['status' => 'finished']);
+        event(new \App\Events\BookingUpdated($booking));
+
+        $customerEmail = $booking->guest_email ?? $booking->user?->email;
+        if ($customerEmail) {
+            Mail::to($customerEmail)->queue(new RequestReviewMail($booking));
+        }
 
         return response()->json(['message' => 'Бронювання успішно завершено.']);
     }

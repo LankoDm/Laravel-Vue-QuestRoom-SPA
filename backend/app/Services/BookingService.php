@@ -14,6 +14,8 @@ use App\Exceptions\Booking\TimeConflictException;
 use App\Exceptions\Booking\InvalidPlayerCountException;
 use App\Exceptions\Booking\ActiveBookingLimitException;
 use InvalidArgumentException;
+use \Illuminate\Support\Facades\Mail;
+use \App\Mail\BookingConfirmed;
 
 class BookingService
 {
@@ -71,6 +73,11 @@ class BookingService
         }
 
         $booking->update(['status' => 'confirmed']);
+
+        $customerEmail = $booking->guest_email ?? $booking->user?->email;
+        if ($customerEmail) {
+            Mail::to($customerEmail)->queue(new BookingConfirmed($booking));
+        }
 
         $finishTime = Carbon::parse($booking->end_time);
         FinishBookingJob::dispatch($booking->id)->delay($finishTime);

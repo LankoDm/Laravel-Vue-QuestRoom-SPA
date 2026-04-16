@@ -39,8 +39,8 @@ const fetchRooms = async (page = 1) => {
         const response = await axios.get('/rooms', {params});
         if (response.data && response.data.data) {
             rooms.value = response.data.data;
-            currentPage.value = response.data.current_page;
-            lastPage.value = response.data.last_page;
+            currentPage.value = response.data.meta?.current_page || response.data.current_page || 1;
+            lastPage.value = response.data.meta?.last_page || response.data.last_page || 1;
         } else {
             rooms.value = response.data || [];
             currentPage.value = 1;

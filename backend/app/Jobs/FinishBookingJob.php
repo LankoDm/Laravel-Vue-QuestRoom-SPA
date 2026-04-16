@@ -10,6 +10,8 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Events\BookingUpdated;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\RequestReviewMail;
 
 class FinishBookingJob implements ShouldQueue
 {
@@ -33,6 +35,11 @@ class FinishBookingJob implements ShouldQueue
             $booking->status = 'finished';
             $booking->save();
             broadcast(new BookingUpdated($booking));
+
+            $customerEmail = $booking->guest_email ?? $booking->user?->email;
+            if ($customerEmail) {
+                Mail::to($customerEmail)->queue(new RequestReviewMail($booking));
+            }
         }
     }
 }

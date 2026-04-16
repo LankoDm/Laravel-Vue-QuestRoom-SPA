@@ -36,7 +36,6 @@ const fetchBookings = async () => {
 
 /**
  * Permanently delete a booking from the database.
- * @param {number} id - Booking ID
  */
 const deleteBooking = async (id) => {
     if (!confirm('Ви дійсно хочете ПОВНІСТЮ видалити це бронювання з бази даних? Цю дію неможливо скасувати.')) {
@@ -54,8 +53,6 @@ const deleteBooking = async (id) => {
 
 /**
  * Update the admin note for a specific booking.
- * @param {number} id - Booking ID
- * @param {string} note - The updated note text
  */
 const updateAdminNote = async (id, note) => {
     try {

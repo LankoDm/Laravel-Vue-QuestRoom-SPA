@@ -1,10 +1,11 @@
 <script setup>
-import {ref} from 'vue';
-import {useRouter} from 'vue-router';
+import {ref, onMounted} from 'vue';
+import {useRouter, useRoute} from 'vue-router';
 import {useAuthStore} from '@/stores/auth.js';
 import axios from 'axios';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 
 // Reactive form state
@@ -14,6 +15,13 @@ const form = ref({
 });
 const errorMessage = ref('');
 const isLoading = ref(false);
+
+onMounted(() => {
+    if (route.query.error === 'google_auth_failed') {
+        errorMessage.value = 'Помилка авторизації через Google. Можливо, ваш email не підтверджено або він прив\'язаний до іншого акаунту.';
+        router.replace({name: 'login'});
+    }
+});
 
 /**
  * Initiate Google OAuth login process.

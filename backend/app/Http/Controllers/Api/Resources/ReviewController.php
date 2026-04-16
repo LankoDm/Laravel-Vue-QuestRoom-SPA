@@ -30,7 +30,7 @@ class ReviewController extends Controller
     }
 
     /**
-     * Store a newly created review.
+     * Store a newly created review by an authenticated user.
      */
     public function store(ReviewRequest $request): JsonResponse
     {
@@ -38,6 +38,23 @@ class ReviewController extends Controller
 
         return response()->json([
             'message' => 'Дякуємо за відгук!',
+            'review' => $review
+        ], 201);
+    }
+
+    /**
+     * Store a guest review via signed token.
+     */
+    public function storeGuest(ReviewRequest $request, \App\Models\Booking $booking): JsonResponse
+    {
+        if (!$request->hasValidSignature()) {
+            abort(403, 'Посилання недійсне або його термін дії минув.');
+        }
+
+        $review = $this->reviewService->createGuestReview($request->validated(), $booking);
+
+        return response()->json([
+            'message' => 'Дякуємо за ваш відгук! Він з\'явиться на сайті після схвалення.',
             'review' => $review
         ], 201);
     }

@@ -12,16 +12,13 @@ class StripePaymentService implements PaymentGatewayInterface
     /**
      * Create a Stripe Checkout session URL for the given booking.
      * Also initializes a pending payment record in the database.
-     *
-     * @param Booking $booking
-     * @return string The Stripe Checkout URL
      */
     public function createPaymentUrl(Booking $booking): string
     {
         Stripe::setApiKey(config('services.stripe.secret'));
 
         $customerEmail = $booking->guest_email ?? $booking->user?->email;
-        $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
+        $frontendUrl = rtrim(config('app.frontend_url', 'http://localhost:5173'), '/');
 
         $sessionConfig = [
             'payment_method_types' => ['card'],

@@ -16,7 +16,9 @@ class PaymentController extends Controller
      */
     public function createCheckoutSession(\Illuminate\Http\Request $request, Booking $booking, PaymentGatewayInterface $paymentGateway): JsonResponse
     {
-        Gate::forUser($request->user('sanctum'))->authorize('view', $booking);
+        if ($booking->user_id !== null) {
+            Gate::forUser($request->user('sanctum'))->authorize('view', $booking);
+        }
 
         if ($booking->payment && $booking->payment->status === 'succeeded') {
             return response()->json(['message' => 'Бронювання вже оплачено'], 400);

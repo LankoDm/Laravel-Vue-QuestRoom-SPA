@@ -24,14 +24,14 @@ onMounted(async () => {
 
         try {
             await authStore.fetchUser();
-            router.push({name: 'home'});
+            router.replace({name: 'home'});
         } catch (error) {
             console.error('Error fetching Google profile:', error);
-            router.push({name: 'login'});
+            router.replace({name: 'login'});
         }
     } else {
         // Redirect to login if no token is present in the URL
-        router.push({name: 'login'});
+        router.replace({name: 'login'});
     }
 });
 </script>

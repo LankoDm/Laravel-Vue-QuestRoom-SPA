@@ -35,7 +35,6 @@ const fetchReviews = async () => {
 
 /**
  * Approve a pending review.
- * @param {string|number} id
  */
 const approveReview = async (id) => {
     try {
@@ -52,7 +51,6 @@ const approveReview = async (id) => {
 
 /**
  * Delete a review permanently.
- * @param {string|number} id
  */
 const deleteReview = async (id) => {
     if (!confirm('Ви впевнені, що хочете видалити цей відгук назавжди?')) return;
@@ -121,9 +119,9 @@ onMounted(() => fetchReviews());
 
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <div class="font-bold text-text text-lg">{{
-                                    review.user?.name || 'Невідомий користувач'
-                                }}
+                            <div class="font-bold text-text text-lg flex items-center gap-2">
+                                {{ review.guest_name || review.user?.name || 'Невідомий користувач' }}
+                                <span v-if="review.guest_name" class="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider">Гість</span>
                             </div>
                             <div class="text-xs text-primary font-bold mt-1">Кімната: {{
                                     review.room?.name || 'ID ' + review.room_id

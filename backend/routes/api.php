@@ -27,6 +27,7 @@ Route::post('/bookings', [BookingController::class, 'store']);
 Route::post('/bookings/hold', [BookingController::class, 'holdSlot']);
 Route::post('/bookings/release', [BookingController::class, 'releaseSlot']);
 Route::post('/bookings/{booking}/pay', [PaymentController::class, 'createCheckoutSession']);
+Route::post('/bookings/{booking}/review', [ReviewController::class, 'storeGuest'])->name('guest.review.store')->middleware('signed');
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);
 Route::get('/bookings/{booking}/ticket', [BookingController::class, 'downloadTicket'])->name('ticket.download')->middleware('signed');
 Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);

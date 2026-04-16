@@ -3,13 +3,9 @@ import { usePagination } from './usePagination';
 
 /**
  * Composable handling the logic for filtering and paginating reviews.
- *
- * @param {import('vue').Ref<Array>} initialReviews - Reactive reference to the raw reviews array fetched from the API.
- * @returns {Object} Reactive state, computed properties, and pagination controls for review management.
  */
 export function useReviewsManager(initialReviews) {
-    /** * Current filter status ('all', 'published', 'new').
-     * @type {import('vue').Ref<string>}
+    /** * Current filter status.
      */
     const filterStatus = ref('all');
 
@@ -40,7 +36,7 @@ export function useReviewsManager(initialReviews) {
         paginatedData: paginatedReviews, // Aliased for better contextual readability
         itemsPerPage,
         resetPage
-    } = usePagination(filteredReviews, 12);
+    } = usePagination(filteredReviews, 9);
 
     /**
      * Reset pagination to the first page whenever the filter criteria changes.

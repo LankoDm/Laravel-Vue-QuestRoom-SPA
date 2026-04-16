@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\Payments;
 
-use App\Events\BookingCreated;
+use App\Events\BookingUpdated;
 use App\Http\Controllers\Controller;
 use App\Jobs\FinishBookingJob;
 use App\Mail\BookingConfirmed;
@@ -77,8 +77,7 @@ class StripeWebhookController extends Controller
             $booking->update(['status' => 'confirmed']);
             $booking->load('room');
 
-            // Dispatch real-time event for frontend
-            BookingCreated::dispatch($booking);
+            event(new BookingUpdated($booking));
 
             // Schedule booking finish job
             $finishTime = Carbon::parse($booking->end_time);

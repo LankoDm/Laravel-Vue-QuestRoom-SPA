@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Booking;
 
 class ReviewRequest extends FormRequest
 {
@@ -12,6 +13,18 @@ class ReviewRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($booking = $this->route('booking')) {
+            $this->merge([
+                'room_id' => $booking->room_id ?? (int) Booking::find($booking)?->room_id
+            ]);
+        }
     }
 
     /**

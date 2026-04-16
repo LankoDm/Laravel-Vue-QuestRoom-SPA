@@ -43,7 +43,6 @@ const applyNewBookings = () => {
 
 /**
  * Mark booking as finished.
- * @param {number} id - Booking ID
  */
 const finishBooking = async (id) => {
     if (!confirm('Позначити це бронювання як завершене?')) return;
@@ -58,7 +57,6 @@ const finishBooking = async (id) => {
 
 /**
  * Confirm a pending booking.
- * @param {number} id - Booking ID
  */
 const confirmBooking = async (id) => {
     if (!confirm('Підтвердити замовлення?')) return;
@@ -73,7 +71,6 @@ const confirmBooking = async (id) => {
 
 /**
  * Cancel a booking.
- * @param {number} id - Booking ID
  */
 const cancelBooking = async (id) => {
     if (!confirm('Скасувати це бронювання?')) return;

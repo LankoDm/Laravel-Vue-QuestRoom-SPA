@@ -23,8 +23,6 @@ class ReviewCreated implements ShouldBroadcast
 
     /**
      * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
      */
     public function broadcastOn(): array
     {
@@ -36,5 +34,26 @@ class ReviewCreated implements ShouldBroadcast
     public function broadcastAs(): string
     {
         return 'review.created';
+    }
+
+    /**
+     * Get the data to broadcast.
+     * Prevents PII leaking to public WebSocket clients.
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'review' => [
+                'id' => $this->review->id,
+                'room_id' => $this->review->room_id,
+                'rating' => $this->review->rating,
+                'comment' => $this->review->comment,
+                'is_approved' => $this->review->is_approved,
+                'user' => [
+                    'name' => $this->review->user->name ?? 'Гість',
+                ],
+                'guest_name' => $this->review->guest_name,
+            ]
+        ];
     }
 }

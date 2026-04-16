@@ -19,8 +19,6 @@ export function useRoomHelpers() {
 
     /**
      * Safely parses the image path and returns the first image URL.
-     * @param {string|Array} imagePath
-     * @returns {string|null}
      */
     const getFirstImage = (imagePath) => {
         if (!imagePath) return null;
@@ -34,8 +32,6 @@ export function useRoomHelpers() {
 
     /**
      * Safely parses the image path and returns an array of all image URLs.
-     * @param {string|Array} imagePath
-     * @returns {Array}
      */
     const parseImagesArray = (imagePath) => {
         if (!imagePath) return [];
