@@ -8,14 +8,9 @@ import PaginationControls from "@/components/UI/PaginationControls.vue";
 
 const toast = useToastStore();
 const isLoading = ref(true);
-const reviews = ref([]);
 
 // Import shared logic
 const {formatFullDate} = useFormatters();
-const {
-    filterStatus, currentPage, itemsPerPage,
-    filteredReviews, paginatedReviews, totalPages
-} = useReviewsManager(reviews);
 
 /**
  * Fetch all reviews for management.
@@ -23,8 +18,9 @@ const {
 const fetchReviews = async () => {
     isLoading.value = true;
     try {
-        const response = await axios.get('/reviews');
-        reviews.value = response.data.data || response.data;
+        const response = await axios.get('/reviews', { params: buildQueryParams() });
+        reviews.value = response.data.data;
+        setPaginationData(response.data.meta || response.data);
     } catch (error) {
         console.error('Помилка завантаження відгуків:', error);
         toast.error('Не вдалося завантажити відгуки.');
@@ -32,6 +28,11 @@ const fetchReviews = async () => {
         isLoading.value = false;
     }
 };
+
+const {
+    filterStatus, currentPage, itemsPerPage, totalPages, totalItems,
+    reviews, buildQueryParams, setPaginationData
+} = useReviewsManager(fetchReviews);
 
 /**
  * Approve a pending review.
@@ -105,7 +106,7 @@ onMounted(() => fetchReviews());
             Завантаження відгуків...
         </div>
 
-        <div v-else-if="filteredReviews.length === 0"
+        <div v-else-if="totalItems === 0"
              class="bg-white p-12 rounded-3xl text-center text-gray-500 shadow-sm border border-secondary">
             За вашими критеріями немає жодного відгуку.
         </div>
@@ -113,7 +114,7 @@ onMounted(() => fetchReviews());
         <div v-else>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
 
-                <div v-for="review in paginatedReviews" :key="review.id"
+                <div v-for="review in reviews" :key="review.id"
                      class="bg-white p-6 rounded-3xl shadow-sm border transition-colors flex flex-col"
                      :class="review.is_approved ? 'border-secondary' : 'border-yellow-300 bg-yellow-50/30'">
 
@@ -172,7 +173,7 @@ onMounted(() => fetchReviews());
             <PaginationControls
                 v-model:current-page="currentPage"
                 :total-pages="totalPages"
-                :total-items="filteredReviews.length"
+                :total-items="totalItems"
                 :items-per-page="itemsPerPage"
             />
         </div>

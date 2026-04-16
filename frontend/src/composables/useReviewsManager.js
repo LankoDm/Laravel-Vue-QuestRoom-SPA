@@ -1,48 +1,52 @@
-import { ref, computed, watch } from 'vue';
-import { usePagination } from './usePagination';
+import { ref, watch } from 'vue';
 
 /**
- * Composable handling the logic for filtering and paginating reviews.
+ * Composable handling the logic for filtering and paginating reviews from the server.
  */
-export function useReviewsManager(initialReviews) {
-    /** * Current filter status.
-     */
+export function useReviewsManager(fetchCallback) {
     const filterStatus = ref('all');
+    const currentPage = ref(1);
+    const itemsPerPage = ref(9);
+    const totalPages = ref(1);
+    const totalItems = ref(0);
+    const reviews = ref([]);
 
     /**
-     * Filter the reviews based on the selected status.
-     * Evaluates dynamically whenever `initialReviews` or `filterStatus` changes.
+     * Build query params object.
      */
-    const filteredReviews = computed(() => {
-        if (!initialReviews.value) return [];
+    const buildQueryParams = () => {
+        const params = {
+            page: currentPage.value,
+            per_page: itemsPerPage.value
+        };
 
-        if (filterStatus.value === 'published') {
-            return initialReviews.value.filter(r => r.is_approved);
+        if (filterStatus.value !== 'all') {
+            params.status = filterStatus.value;
         }
-        if (filterStatus.value === 'new') {
-            return initialReviews.value.filter(r => !r.is_approved);
-        }
+        
+        return params;
+    };
 
-        return initialReviews.value;
+    /**
+     * Update pagination from Laravel metadata.
+     */
+    const setPaginationData = (meta) => {
+        currentPage.value = meta.current_page || 1;
+        totalPages.value = meta.last_page || 1;
+        totalItems.value = meta.total || 0;
+    };
+
+    // Reset page and refetch when filters change
+    watch(filterStatus, () => {
+        currentPage.value = 1;
+        if (fetchCallback) fetchCallback();
     });
 
-    /**
-     * Initialize universal pagination with the filtered data.
-     * Sets the default items per page to 12.
-     */
-    const {
-        currentPage,
-        totalPages,
-        paginatedData: paginatedReviews, // Aliased for better contextual readability
-        itemsPerPage,
-        resetPage
-    } = usePagination(filteredReviews, 9);
-
-    /**
-     * Reset pagination to the first page whenever the filter criteria changes.
-     */
-    watch(filterStatus, () => {
-        resetPage();
+    // Fetch data when page changes
+    watch(currentPage, (newVal, oldVal) => {
+        if (newVal !== oldVal && fetchCallback) {
+            fetchCallback();
+        }
     });
 
     return {
@@ -50,10 +54,12 @@ export function useReviewsManager(initialReviews) {
         filterStatus,
         currentPage,
         itemsPerPage,
+        totalPages,
+        totalItems,
+        reviews,
 
-        // Computed
-        filteredReviews,
-        paginatedReviews,
-        totalPages
+        // Methods
+        buildQueryParams,
+        setPaginationData
     };
 }
