@@ -37,10 +37,12 @@ class BookingController extends Controller
     {
         $user = $request->user();
 
-        $bookings = ($user->isAdmin() || $user->isManager())
-            ? Booking::with(['room'])->get()
-            : Booking::with(['room'])->where('user_id', $user->id)->get();
+        if ($user->isAdmin() || $user->isManager()) {
+            $bookings = $this->bookingService->getFilteredBookings($request);
+            return response()->json($bookings);
+        }
 
+        $bookings = Booking::with(['room'])->where('user_id', $user->id)->get();
         return response()->json($bookings);
     }
 
