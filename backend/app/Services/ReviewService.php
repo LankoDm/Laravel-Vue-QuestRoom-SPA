@@ -6,6 +6,7 @@ use App\Models\Review;
 use App\Events\ReviewCreated;
 use App\Exceptions\Review\ReviewAlreadyExistsException;
 use Illuminate\Database\Eloquent\Collection;
+use \Illuminate\Http\Request;
 
 class ReviewService
 {
@@ -23,12 +24,22 @@ class ReviewService
     /**
      * Get all reviews (approved and pending) for the manager dashboard.
      */
-    public function getAllForManagement(): Collection
+    public function getAllForManagement(Request $request)
     {
-        return Review::with(['user:id,name', 'room:id,name'])
-            ->orderBy('is_approved', 'asc')
+        $query = Review::with(['user:id,name', 'room:id,name']);
+
+        if ($request->has('status')) {
+            $status = $request->query('status');
+            if ($status === 'new') {
+                $query->where('is_approved', false);
+            } elseif ($status === 'published') {
+                $query->where('is_approved', true);
+            }
+        }
+
+        return $query->orderBy('is_approved', 'asc')
             ->latest()
-            ->get();
+            ->paginate($request->query('per_page', 9));
     }
 
     /**

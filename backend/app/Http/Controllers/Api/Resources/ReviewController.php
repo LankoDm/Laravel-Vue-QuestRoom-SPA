@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ReviewRequest;
 use App\Services\ReviewService;
 use Illuminate\Http\JsonResponse;
+use \Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
@@ -87,9 +88,9 @@ class ReviewController extends Controller
     /**
      * Display all reviews for the manager dashboard.
      */
-    public function manageIndex(): JsonResponse
+    public function manageIndex(Request $request): JsonResponse
     {
-        $reviews = $this->reviewService->getAllForManagement();
+        $reviews = $this->reviewService->getAllForManagement($request);
 
         return response()->json($reviews);
     }
