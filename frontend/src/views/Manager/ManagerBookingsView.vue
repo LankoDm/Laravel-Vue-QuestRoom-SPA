@@ -8,30 +8,32 @@ import PaginationControls from "@/components/UI/PaginationControls.vue";
 
 const toast = useToastStore();
 const isLoading = ref(true);
-const bookings = ref([]);
 const newBookingsQueue = ref([]);
+
 // Initialize Composables
 const {formatPrice, formatDateTime, formatTime} = useFormatters();
-const {
-    searchQuery, selectedStatuses, dateMode, customDate, currentPage, itemsPerPage,
-    filteredBookings, paginatedBookings, totalPages, statusNames, statusClasses, paymentNames
-} = useBookingsManager(bookings);
 
 /**
- * Fetch all bookings from the server.
+ * Fetch bookings from the server based on current filters.
  */
 const fetchBookings = async () => {
+    isLoading.value = true;
     try {
-        const response = await axios.get('/bookings');
-        let data = response.data.data || response.data;
-        // Sort descending by creation date
-        bookings.value = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const response = await axios.get('/bookings', { params: buildQueryParams() });
+        bookings.value = response.data.data;
+        setPaginationData(response.data.meta || response.data);
     } catch (error) {
         console.error('Error fetching bookings:', error);
     } finally {
         isLoading.value = false;
     }
 };
+
+const {
+    searchQuery, selectedStatuses, dateMode, customDate, currentPage, itemsPerPage,
+    totalItems, totalPages, bookings, buildQueryParams, setPaginationData,
+    statusNames, statusClasses, paymentNames
+} = useBookingsManager(fetchBookings);
 
 /**
  * Merge newly received WebSocket bookings into the main list.
@@ -204,7 +206,7 @@ onMounted(() => {
                     </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                    <template v-for="b in paginatedBookings" :key="b.id">
+                    <template v-for="b in bookings" :key="b.id">
                         <tr class="hover:bg-gray-50">
                             <td class="p-4 pl-6 min-w-[140px]">
                                 <div class="text-xs text-gray-500 font-bold mb-0.5">{{
@@ -292,10 +294,10 @@ onMounted(() => {
                 <PaginationControls
                     v-model:current-page="currentPage"
                     :total-pages="totalPages"
-                    :total-items="filteredBookings.length"
+                    :total-items="totalItems"
                     :items-per-page="itemsPerPage"
                 />
-                <div v-if="filteredBookings.length === 0" class="p-8 text-center text-gray-500 font-medium">
+                <div v-if="totalItems === 0" class="p-8 text-center text-gray-500 font-medium">
                     Бронювань не знайдено.
                 </div>
             </div>

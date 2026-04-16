@@ -1,87 +1,70 @@
-import { ref, computed, watch } from 'vue';
-import { usePagination } from './usePagination';
+import { ref, watch, computed } from 'vue';
 
 /**
  * Composable handling the logic for filtering, searching, and paginating bookings.
- * Used by both Admin and Manager views.
- * * @param {Array} initialBookings - Reactive reference to the main bookings array.
+ * Adapted for server-side pagination.
  */
-export function useBookingsManager(initialBookings) {
+export function useBookingsManager(fetchCallback) {
     const searchQuery = ref('');
     const selectedStatuses = ref(['pending', 'confirmed', 'finished', 'cancelled']);
     const dateMode = ref('all');
     const customDate = ref('');
 
-    // Helper function to get local YYYY-MM-DD
-    const getLocalYYYYMMDD = (dateObj) => {
-        const year = dateObj.getFullYear();
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
+    const currentPage = ref(1);
+    const itemsPerPage = ref(20);
+    const totalPages = ref(1);
+    const totalItems = ref(0);
 
-    // Main computed property for filtered bookings
-    const filteredBookings = computed(() => {
-        if (!initialBookings.value) return [];
-
-        let result = initialBookings.value.filter(b => selectedStatuses.value.includes(b.status));
-
-        // Filter by Date
-        if (dateMode.value !== 'all') {
-            const todayStr = getLocalYYYYMMDD(new Date());
-            result = result.filter(b => {
-                if (!b.created_at) return false;
-                const bDateStr = getLocalYYYYMMDD(new Date(b.created_at));
-
-                if (dateMode.value === 'today') {
-                    return bDateStr === todayStr;
-                } else if (dateMode.value === 'custom' && customDate.value) {
-                    return bDateStr === customDate.value;
-                }
-                return true;
-            });
-        }
-
-        // Filter by Search Query
-        if (searchQuery.value) {
-            const query = searchQuery.value.toLowerCase();
-            const queryDigits = query.replace(/\D/g, '');
-
-            result = result.filter(b => {
-                const idStr = String(b.id);
-                const clientName = (b.guest_name || b.user?.name || '').toLowerCase();
-                const clientEmail = (b.guest_email || b.user?.email || '').toLowerCase();
-                const clientPhoneOriginal = (b.guest_phone || '').toLowerCase();
-                const clientPhoneDigits = clientPhoneOriginal.replace(/\D/g, '');
-
-                const phoneMatch = clientPhoneOriginal.includes(query) ||
-                    (queryDigits.length > 0 && clientPhoneDigits.includes(queryDigits));
-
-                return idStr.includes(query) ||
-                    clientName.includes(query) ||
-                    clientEmail.includes(query) ||
-                    phoneMatch;
-            });
-        }
-        return result;
-    });
+    const bookings = ref([]);
 
     /**
-     * Integrate universal pagination composable.
-     * We specify 20 items per page and rename 'paginatedData' to 'paginatedBookings' for context.
+     * Build the query params object to send to the server.
      */
-    const {
-        currentPage,
-        itemsPerPage,
-        totalPages,
-        paginatedData: paginatedBookings,
-        resetPage
-    } = usePagination(filteredBookings, 20);
+    const buildQueryParams = () => {
+        const params = {
+            page: currentPage.value,
+            per_page: itemsPerPage.value,
+        };
 
-    // Reset pagination to the first page whenever any filter changes
+        if (searchQuery.value) {
+            params.search = searchQuery.value;
+        }
+
+        if (selectedStatuses.value.length) {
+            params.statuses = selectedStatuses.value;
+        }
+
+        if (dateMode.value !== 'all') {
+            params.dateMode = dateMode.value;
+            if (dateMode.value === 'custom' && customDate.value) {
+                params.customDate = customDate.value;
+            }
+        }
+
+        return params;
+    };
+
+    /**
+     * Applies metadata from the Laravel paginator response.
+     */
+    const setPaginationData = (meta) => {
+        currentPage.value = meta.current_page || 1;
+        totalPages.value = meta.last_page || 1;
+        totalItems.value = meta.total || 0;
+    };
+
+    // Watch filters to reset page to 1 and fetch data
     watch([searchQuery, selectedStatuses, dateMode, customDate], () => {
-        resetPage();
+        currentPage.value = 1;
+        if (fetchCallback) fetchCallback();
     }, { deep: true });
+
+    // Watch page changes (not triggering reset) to fetch data
+    watch(currentPage, (newVal, oldVal) => {
+        if (newVal !== oldVal && fetchCallback) {
+            fetchCallback();
+        }
+    });
 
     // Dictionaries
     const statusNames = {
@@ -104,18 +87,22 @@ export function useBookingsManager(initialBookings) {
     };
 
     return {
-        // State
+        // Search & Filters State
         searchQuery,
         selectedStatuses,
         dateMode,
         customDate,
+
+        // Pagination State
         currentPage,
         itemsPerPage,
-
-        // Computed
-        filteredBookings,
-        paginatedBookings,
         totalPages,
+        totalItems,
+
+        // Data
+        bookings,
+        buildQueryParams,
+        setPaginationData,
 
         // Constants
         statusNames,
