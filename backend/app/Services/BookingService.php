@@ -16,9 +16,67 @@ use App\Exceptions\Booking\ActiveBookingLimitException;
 use InvalidArgumentException;
 use \Illuminate\Support\Facades\Mail;
 use \App\Mail\BookingConfirmed;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class BookingService
 {
+    /**
+     * Get paginated and filtered bookings for Admin/Manager dashboard.
+     */
+    public function getFilteredBookings(Request $request): LengthAwarePaginator
+    {
+        $query = Booking::with(['room', 'user']);
+
+        // Only admins/managers should hit this
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->filled('statuses')) {
+            $query->whereIn('status', (array) $request->statuses);
+        }
+
+        if ($request->filled('dateMode') && $request->dateMode !== 'all') {
+            if ($request->dateMode === 'today') {
+                $query->whereDate('created_at', Carbon::today());
+            } elseif ($request->dateMode === 'custom' && $request->filled('customDate')) {
+                $query->whereDate('created_at', $request->customDate);
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $searchDigits = preg_replace('/\D/', '', $search);
+
+            $query->where(function ($q) use ($search, $searchDigits) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhere('guest_name', 'like', "%{$search}%")
+                  ->orWhere('guest_email', 'like', "%{$search}%")
+                  ->orWhere('guest_phone', 'like', "%{$search}%");
+                  
+                if (strlen($searchDigits) > 0) {
+                     $q->orWhereRaw("REGEXP_REPLACE(guest_phone, '[^0-9]', '') LIKE ?", ["%{$searchDigits}%"]);
+                }
+
+                $q->orWhereHas('user', function ($userQuery) use ($search, $searchDigits) {
+                    $userQuery->where('name', 'like', "%{$search}%")
+                              ->orWhere('email', 'like', "%{$search}%")
+                              ->orWhere('phone', 'like', "%{$search}%");
+                              
+                    if (strlen($searchDigits) > 0) {
+                        $userQuery->orWhereRaw("REGEXP_REPLACE(phone, '[^0-9]', '') LIKE ?", ["%{$searchDigits}%"]);
+                    }
+                });
+            });
+        }
+
+        // Order by latest created
+        $query->latest();
+
+        return $query->paginate((int) $request->input('per_page', 20));
+    }
+
     /**
      * Create a new booking and dispatch events.
      */
