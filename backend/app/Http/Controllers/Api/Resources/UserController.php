@@ -22,7 +22,10 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $users = $this->userService->getFilteredUsers($request->input('email'));
+        $users = $this->userService->getFilteredUsers(
+            $request->input('email'),
+            $request->input('per_page', 20)
+        );
 
         return response()->json($users);
     }

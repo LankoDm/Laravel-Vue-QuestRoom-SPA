@@ -2,7 +2,6 @@
 import {ref, onMounted, watch} from 'vue';
 import axios from 'axios';
 import {useToastStore} from '@/stores/toast';
-import {usePagination} from '@/composables/usePagination';
 import PaginationControls from "@/components/UI/PaginationControls.vue";
 
 const toast = useToastStore();
@@ -12,33 +11,30 @@ const users = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
 
-/**
- * Integrate universal pagination composable.
- * We specify 20 items per page and alias 'paginatedData' to 'paginatedUsers'.
- */
-const {
-    currentPage,
-    itemsPerPage,
-    totalPages,
-    paginatedData: paginatedUsers,
-    resetPage
-} = usePagination(users, 20);
+const currentPage = ref(1);
+const itemsPerPage = ref(20);
+const totalPages = ref(1);
+const totalItems = ref(0);
 
 /**
- * Reset pagination to the first page when the search query changes.
- */
-watch(searchQuery, () => {
-    resetPage();
-});
-
-/**
- * Fetch users from the server, optionally filtered by email.
+ * Fetch users from the server with server-side pagination and email filtering.
  */
 const fetchUsers = async () => {
     isLoading.value = true;
     try {
-        const response = await axios.get(`/users?email=${searchQuery.value}`);
-        users.value = response.data.data || response.data;
+        const response = await axios.get('/users', {
+            params: {
+                page: currentPage.value,
+                per_page: itemsPerPage.value,
+                email: searchQuery.value
+            }
+        });
+        
+        users.value = response.data.data;
+        const meta = response.data.meta || response.data;
+        currentPage.value = meta.current_page || 1;
+        totalPages.value = meta.last_page || 1;
+        totalItems.value = meta.total || 0;
     } catch (error) {
         console.error('Error fetching users:', error);
         toast.error('Не вдалося завантажити користувачів.');
@@ -46,6 +42,23 @@ const fetchUsers = async () => {
         isLoading.value = false;
     }
 };
+
+/**
+ * Reset pagination to the first page when the search query is submitted manually.
+ */
+const submitSearch = () => {
+    currentPage.value = 1;
+    fetchUsers();
+};
+
+/**
+ * Fetch new data automatically when the page changes.
+ */
+watch(currentPage, (newVal, oldVal) => {
+    if (newVal !== oldVal) {
+        fetchUsers();
+    }
+});
 
 /**
  * Update the role of a specific user.
@@ -75,7 +88,7 @@ onMounted(() => fetchUsers());
         </div>
 
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-secondary mb-8">
-            <form @submit.prevent="fetchUsers" class="flex gap-4 items-end">
+            <form @submit.prevent="submitSearch" class="flex gap-4 items-end">
                 <div class="flex-1">
                     <label class="block text-sm font-bold text-gray-700 mb-2">Знайти за Email</label>
                     <input
@@ -106,7 +119,7 @@ onMounted(() => fetchUsers());
                     </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                    <tr v-for="user in paginatedUsers" :key="user.id" class="hover:bg-gray-50 transition-colors">
+                    <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50 transition-colors">
                         <td class="p-4 pl-6">
                             <div class="font-bold text-text">#{{ user.id }}</div>
                             <div class="font-bold text-primary mt-1">{{ user.name }}</div>
@@ -137,7 +150,7 @@ onMounted(() => fetchUsers());
             <PaginationControls
                 v-model:current-page="currentPage"
                 :total-pages="totalPages"
-                :total-items="users.length"
+                :total-items="totalItems"
                 :items-per-page="itemsPerPage"
             />
             <div v-if="users.length === 0" class="p-8 text-center text-gray-500">

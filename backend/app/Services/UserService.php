@@ -12,7 +12,7 @@ class UserService
     /**
      * Get users based on search criteria.
      */
-    public function getFilteredUsers(?string $emailSearch = null): Collection
+    public function getFilteredUsers(?string $emailSearch = null, int $perPage = 20)
     {
         $query = User::query();
 
@@ -20,7 +20,7 @@ class UserService
             $query->where('email', 'like', '%' . $emailSearch . '%');
         }
 
-        return $query->latest()->get();
+        return $query->latest()->paginate($perPage);
     }
 
     /**
