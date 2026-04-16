@@ -174,6 +174,13 @@ onMounted(() => {
             .listen('.booking.updated', fetchRoomData);
     }
 });
+
+onUnmounted(() => {
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+    if (window.Echo) {
+        window.Echo.leave('manager-channel');
+    }
+});
 </script>
 
 <template>
