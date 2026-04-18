@@ -1,5 +1,5 @@
 <script setup>
-import {ref, onMounted, computed, onUnmounted} from 'vue';
+import {ref, onMounted, computed, onUnmounted, watch} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
 import axios from 'axios';
 import {useToastStore} from '@/stores/toast';
@@ -10,9 +10,6 @@ import RoomBookingModal from '@/components/Room/RoomBookingModal.vue';
 import GuestReviewModal from '@/components/Room/GuestReviewModal.vue';
 import PaginationControls from '@/components/UI/PaginationControls.vue';
 
-// Import Composables
-import {usePagination} from '@/composables/usePagination';
-
 const route = useRoute();
 const router = useRouter();
 const toast = useToastStore();
@@ -22,16 +19,11 @@ const room = ref(null);
 const reviews = ref([]);
 const isLoading = ref(true);
 
-/**
- * Initialize universal pagination for reviews.
- * We display 5 reviews per page to keep the layout clean.
- */
-const {
-    currentPage: reviewsPage,
-    totalPages: reviewsTotalPages,
-    itemsPerPage: reviewsPerPage,
-    paginatedData: paginatedReviews
-} = usePagination(reviews, 5);
+// Reviews Pagination
+const reviewsPage = ref(1);
+const reviewsTotalPages = ref(1);
+const reviewsTotalItems = ref(0);
+const reviewsPerPage = ref(5);
 
 // Booking State
 const selectedPlayers = ref(0);
@@ -59,6 +51,27 @@ const currentPriceKopecks = computed(() => {
 });
 
 /**
+ * Fetch Reviews with pagination.
+ */
+const fetchReviews = async (page = 1) => {
+    if (!room.value) return;
+    try {
+        const revRes = await axios.get(`/rooms/${room.value.id}/reviews?page=${page}&per_page=${reviewsPerPage.value}`);
+        reviews.value = revRes.data.data;
+        const meta = revRes.data.meta || revRes.data;
+        reviewsPage.value = meta.current_page || 1;
+        reviewsTotalPages.value = meta.last_page || 1;
+        reviewsTotalItems.value = meta.total || 0;
+    } catch (error) {
+        console.error('Помилка завантаження відгуків', error);
+    }
+};
+
+watch(reviewsPage, (newVal) => {
+    fetchReviews(newVal);
+});
+
+/**
  * Fetch Room and Reviews.
  */
 const fetchRoomData = async () => {
@@ -70,9 +83,7 @@ const fetchRoomData = async () => {
         room.value = fetchedRoom;
         if (selectedPlayers.value === 0) selectedPlayers.value = room.value.min_players; // Set default once
 
-        // Fetch reviews
-        const revRes = await axios.get(`/rooms/${room.value.id}/reviews`);
-        reviews.value = revRes.data.data || revRes.data;
+        await fetchReviews(reviewsPage.value);
     } catch (error) {
         if (error.response?.status === 404) router.replace({name: 'not-found'});
     } finally {
@@ -283,7 +294,7 @@ onUnmounted(() => {
                     відгуків.
                 </div>
                 <div v-else class="space-y-4">
-                    <div v-for="review in paginatedReviews" :key="review.id"
+                    <div v-for="review in reviews" :key="review.id"
                          class="bg-white p-6 rounded-2xl border border-secondary shadow-sm">
                         <div class="flex justify-between items-start mb-2">
                             <div class="font-bold text-text">{{ review.guest_name || review.user?.name || 'Гість' }}</div>
@@ -305,7 +316,7 @@ onUnmounted(() => {
                     <PaginationControls
                         v-model:current-page="reviewsPage"
                         :total-pages="reviewsTotalPages"
-                        :total-items="reviews.length"
+                        :total-items="reviewsTotalItems"
                         :items-per-page="reviewsPerPage"
                     />
                 </div>
