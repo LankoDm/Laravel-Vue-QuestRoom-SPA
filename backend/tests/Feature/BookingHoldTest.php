@@ -20,8 +20,6 @@ class BookingHoldTest extends TestCase
     /**
      * Test that a user can successfully place a hold on an available room slot.
      * The hold token should be temporarily stored in the Cache.
-     *
-     * @return void
      */
     public function test_user_can_hold_available_slot(): void
     {
@@ -53,8 +51,6 @@ class BookingHoldTest extends TestCase
 
     /**
      * Test that the system prevents holding a slot that overlaps with a confirmed booking.
-     *
-     * @return void
      */
     public function test_user_cannot_hold_confirmed_slot(): void
     {
@@ -77,7 +73,7 @@ class BookingHoldTest extends TestCase
         // Attempt to hold the slot that is already booked in the database
         $response = $this->postJson('/api/bookings/hold', $payload);
 
-        // Verify the request is rejected with a 422 status
+        // Verify the request is rejected with a correct status
         $response->assertStatus(409)
             ->assertJson(['message' => 'На жаль, цей час вже заброньовано іншими гравцями.']);
     }
