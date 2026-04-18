@@ -23,9 +23,10 @@ class ReviewController extends Controller
     /**
      * Display approved reviews for a specific room.
      */
-    public function index(string $roomId): JsonResponse
+    public function index(\Illuminate\Http\Request $request, string $roomId): JsonResponse
     {
-        $reviews = $this->reviewService->getApprovedByRoom($roomId);
+        $perPage = $request->query('per_page', 5);
+        $reviews = $this->reviewService->getApprovedByRoom($roomId, $perPage);
 
         return response()->json($reviews);
     }

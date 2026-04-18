@@ -13,12 +13,14 @@ class ReviewService
     /**
      * Get all approved reviews for a specific room.
      */
-    public function getApprovedByRoom(string $roomId): Collection
+    public function getApprovedByRoom(string $roomId, ?int $perPage = null)
     {
-        return Review::with('user:id,name')
+        $query = Review::with('user:id,name,guest_name')
             ->where('room_id', $roomId)
             ->where('is_approved', true)
-            ->get();
+            ->latest();
+
+        return $perPage ? $query->paginate($perPage) : $query->get();
     }
 
     /**
