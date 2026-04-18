@@ -162,16 +162,43 @@ class BookingController extends Controller
      */
     public function myBookings(Request $request): JsonResponse
     {
-        $bookings = Booking::with('room:id,name,image_path,slug')
+        $query = Booking::with('room:id,name,image_path,slug')
             ->where('user_id', $request->user()->id)
-            ->orderBy('start_time', 'desc')
-            ->get()
-            ->map(function ($booking) {
+            ->orderBy('start_time', 'desc');
+
+        $type = $request->query('type'); // 'active' or 'past'
+
+        if ($type === 'active') {
+            $bookings = $query->whereIn('status', ['pending', 'confirmed'])->get();
+            $bookings->transform(function ($booking) {
                 if (in_array($booking->status, ['confirmed', 'finished'])) {
                     $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
                 }
                 return $booking;
             });
+            return response()->json($bookings);
+        }
+
+        if ($type === 'past') {
+            $perPage = $request->query('per_page', 10);
+            $paginator = $query->whereIn('status', ['finished', 'cancelled'])->paginate($perPage);
+            
+            $paginator->getCollection()->transform(function ($booking) {
+                if (in_array($booking->status, ['confirmed', 'finished'])) {
+                    $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
+                }
+                return $booking;
+            });
+            return response()->json($paginator);
+        }
+
+        // Fallback for full list
+        $bookings = $query->get()->map(function ($booking) {
+            if (in_array($booking->status, ['confirmed', 'finished'])) {
+                $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
+            }
+            return $booking;
+        });
 
         return response()->json($bookings);
     }
