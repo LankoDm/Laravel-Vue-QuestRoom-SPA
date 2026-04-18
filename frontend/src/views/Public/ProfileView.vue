@@ -1,12 +1,11 @@
 <script setup>
-import {ref, onMounted, computed} from 'vue';
+import {ref, onMounted, computed, watch} from 'vue';
 import axios from 'axios';
 import {useAuthStore} from '@/stores/auth';
 import {useToastStore} from '@/stores/toast';
 
 // Import Shared Logic (Composables)
 import {useFormatters} from '@/composables/useFormatters';
-import {usePagination} from '@/composables/usePagination';
 import {useRoomHelpers} from '@/composables/useRoomHelpers';
 
 const toast = useToastStore();
@@ -17,7 +16,11 @@ const {formatPrice, formatFullDate} = useFormatters();
 const {getFirstImage} = useRoomHelpers();
 
 // State
-const bookings = ref([]);
+const activeBookings = ref([]);
+const pastBookings = ref([]);
+const historyPage = ref(1);
+const historyTotalPages = ref(1);
+
 const isLoading = ref(true);
 const selectedBooking = ref(null);
 
@@ -43,31 +46,41 @@ const statusNames = {
     pending: 'Очікує', confirmed: 'Підтверджено', cancelled: 'Скасовано', finished: 'Завершено'
 };
 
-// Booking Filters
-const activeBookings = computed(() => bookings.value.filter(b => ['pending', 'confirmed'].includes(b.status)));
-const pastBookings = computed(() => bookings.value.filter(b => ['finished', 'cancelled'].includes(b.status)));
-
-// Integrate Universal Pagination for History
-const {
-    currentPage: historyPage,
-    totalPages: historyTotalPages,
-    paginatedData: paginatedHistory
-} = usePagination(pastBookings, 10);
-
 /**
- * Fetch all bookings for the authenticated user.
+ * Fetch all bookings for the authenticated user via independent server request logic.
  */
-const fetchMyBookings = async () => {
+const fetchActiveBookings = async () => {
     try {
-        const response = await axios.get('/user/bookings');
-        let data = response.data.data || response.data;
-        bookings.value = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const response = await axios.get('/user/bookings?type=active');
+        activeBookings.value = response.data;
     } catch (error) {
-        console.error('Помилка завантаження бронювань:', error);
-    } finally {
-        isLoading.value = false;
+        console.error('Помилка завантаження активних бронювань:', error);
     }
 };
+
+const fetchPastBookings = async (page = 1) => {
+    try {
+        const response = await axios.get(`/user/bookings?type=past&page=${page}`);
+        pastBookings.value = response.data.data || response.data;
+        const meta = response.data.meta || response.data;
+        historyPage.value = meta.current_page || 1;
+        historyTotalPages.value = meta.last_page || 1;
+    } catch (error) {
+        console.error('Помилка завантаження історії бронювань:', error);
+    }
+};
+
+const fetchMyBookings = async () => {
+    isLoading.value = true;
+    await Promise.all([fetchActiveBookings(), fetchPastBookings(historyPage.value)]);
+    isLoading.value = false;
+};
+
+watch(historyPage, (newVal, oldVal) => {
+    if (newVal !== oldVal) {
+        fetchPastBookings(newVal);
+    }
+});
 
 /**
  * Fetch detailed view for a single booking modal.
@@ -248,7 +261,7 @@ onMounted(() => fetchMyBookings());
                             <span class="w-3 h-3 rounded-full bg-gray-300"></span> Історія
                         </h3>
                         <div class="space-y-4">
-                            <div v-for="booking in paginatedHistory" :key="booking.id"
+                            <div v-for="booking in pastBookings" :key="booking.id"
                                  class="bg-white p-4 sm:p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 opacity-80 hover:opacity-100 transition-opacity">
                                 <div class="flex items-center gap-3 sm:gap-4 overflow-hidden w-full sm:w-auto">
                                     <img v-if="booking.room?.image_path" :src="getFirstImage(booking.room.image_path)"
