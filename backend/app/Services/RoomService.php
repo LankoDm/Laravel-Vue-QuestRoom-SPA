@@ -89,8 +89,8 @@ class RoomService
     {
         $paths = [];
         foreach ($files as $file) {
-            $result = $file->storeOnCloudinary('questroom/rooms');
-            $paths[] = $result->getSecurePath();
+            $path = $file->store('questroom/rooms', 'cloudinary');
+            $paths[] = Storage::disk('cloudinary')->url($path);
         }
 
         return json_encode($paths);
