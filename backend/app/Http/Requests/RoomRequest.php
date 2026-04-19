@@ -22,7 +22,9 @@ class RoomRequest extends FormRequest
      */
     public function rules(): array
     {
-        $roomId = $this->route('room');
+        $room = $this->route('room');
+        $roomId = is_object($room) ? $room->id : $room;
+
         return [
             'name' => [
                 'required',
