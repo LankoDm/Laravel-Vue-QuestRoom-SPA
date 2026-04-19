@@ -89,7 +89,8 @@ class RoomService
     {
         $paths = [];
         foreach ($files as $file) {
-            $paths[] = $file->store('rooms', 'public');
+            $result = $file->storeOnCloudinary('questroom/rooms');
+            $paths[] = $result->getSecurePath();
         }
 
         return json_encode($paths);
