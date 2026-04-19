@@ -59,7 +59,7 @@ const fetchRoom = async () => {
             weekday_price: data.weekday_price ? data.weekday_price / 100 : null,
             weekend_price: data.weekend_price ? data.weekend_price / 100 : null,
             duration_minutes: data.duration_minutes || 60,
-            is_active: data.is_active !== undefined ? data.is_active : 1
+            is_active: data.is_active ? 1 : 0
         };
 
         imagePreviews.value = parseImagesArray(image_path);
