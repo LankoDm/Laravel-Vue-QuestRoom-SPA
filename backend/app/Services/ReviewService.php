@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Review;
 use App\Events\ReviewCreated;
 use App\Exceptions\Review\ReviewAlreadyExistsException;
+use App\Models\Room;
 use Illuminate\Database\Eloquent\Collection;
 use \Illuminate\Http\Request;
 
@@ -15,8 +16,10 @@ class ReviewService
      */
     public function getApprovedByRoom(string $roomId, ?int $perPage = null)
     {
-        $query = Review::with('user:id,name,guest_name')
-            ->where('room_id', $roomId)
+        $room = Room::where('id', $roomId)->orWhere('slug', $roomId)->firstOrFail();
+
+        $query = Review::with('user:id,name')
+            ->where('room_id', $room->id)
             ->where('is_approved', true)
             ->latest();
 
