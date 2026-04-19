@@ -164,7 +164,7 @@ class BookingController extends Controller
     {
         $query = Booking::with('room:id,name,image_path,slug')
             ->where('user_id', $request->user()->id)
-            ->orderBy('start_time', 'desc');
+            ->orderBy('created_at', 'desc');
 
         $type = $request->query('type'); // 'active' or 'past'
 
