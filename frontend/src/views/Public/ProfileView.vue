@@ -23,6 +23,7 @@ const historyTotalPages = ref(1);
 
 const isLoading = ref(true);
 const selectedBooking = ref(null);
+const isDownloadingTicket = ref(false);
 
 // Modals State
 const isModalOpen = ref(false);
@@ -134,8 +135,9 @@ const submitProfileUpdate = async () => {
 const submitPasswordUpdate = async () => {
     try {
         await axios.put('/user/password', passwordForm.value);
-        toast.success('Пароль успішно змінено!');
+        toast.success(authStore.user.has_password ? 'Пароль успішно змінено!' : 'Пароль успішно встановлено!');
         isChangePasswordModalOpen.value = false;
+        authStore.user.has_password = true;
         passwordForm.value = {current_password: '', password: '', password_confirmation: ''};
     } catch (error) {
         toast.warning(error.response?.data?.message || 'Помилка зміни пароля. Перевірте правильність поточного пароля.');
@@ -160,6 +162,33 @@ const submitReview = async () => {
         isReviewModalOpen.value = false;
     } catch (error) {
         toast.error(error.response?.data?.message || 'Помилка при відправці відгуку');
+    }
+};
+
+const downloadTicket = async (bookingId) => {
+    isDownloadingTicket.value = true;
+    try {
+        const response = await axios.get(`/bookings/${bookingId}/ticket`, {
+            responseType: 'blob',
+            headers: {
+                'Accept': 'application/pdf'
+            }
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `ticket_${bookingId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        toast.error('Не вдалося завантажити квиток');
+        console.error('Download ticket error:', error);
+    } finally {
+        isDownloadingTicket.value = false;
     }
 };
 
@@ -197,7 +226,7 @@ onMounted(() => fetchMyBookings());
                     </button>
                     <button @click="isChangePasswordModalOpen = true"
                             class="w-full cursor-pointer bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
-                        Змінити пароль
+                        {{ authStore.user.has_password ? 'Змінити пароль' : 'Встановити пароль' }}
                     </button>
                     <button @click="authStore.logout"
                             class="w-full cursor-pointer mt-6 bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-600 hover:text-white transition-colors">
@@ -359,9 +388,9 @@ onMounted(() => fetchMyBookings());
              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
              @click="isChangePasswordModalOpen = false">
             <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8" @click.stop>
-                <h3 class="text-2xl font-black mb-6 text-text">Зміна пароля</h3>
+                <h3 class="text-2xl font-black mb-6 text-text">{{ authStore.user.has_password ? 'Зміна пароля' : 'Встановлення пароля' }}</h3>
                 <form @submit.prevent="submitPasswordUpdate" class="space-y-4">
-                    <div>
+                    <div v-if="authStore.user.has_password">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Поточний пароль</label>
                         <input v-model="passwordForm.current_password" type="password" required
                                class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary outline-none bg-gray-50 text-text font-medium">
