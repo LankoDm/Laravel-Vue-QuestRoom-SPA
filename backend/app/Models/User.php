@@ -38,6 +38,13 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $appends = ['has_password'];
+
+    public function getHasPasswordAttribute()
+    {
+        return !empty($this->attributes['password']);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Resources;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UserRequest;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
@@ -59,12 +60,9 @@ class UserController extends Controller
     /**
      * Update the authenticated user's password.
      */
-    public function updatePassword(Request $request): JsonResponse
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'current_password' => 'required|current_password',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+        $validated = $request->validated();
 
         $this->userService->updatePassword($request->user(), $validated['password']);
 
