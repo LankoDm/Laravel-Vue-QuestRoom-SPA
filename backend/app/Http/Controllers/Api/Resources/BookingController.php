@@ -4,16 +4,15 @@ namespace App\Http\Controllers\Api\Resources;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BookingRequest;
+use App\Http\Requests\HoldSlotRequest;
+use App\Http\Requests\ReleaseSlotRequest;
 use App\Models\Booking;
 use App\Services\BookingService;
+use App\Services\TicketService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\URL;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\RequestReviewMail;
 
 class BookingController extends Controller
 {
@@ -21,13 +20,15 @@ class BookingController extends Controller
      * @var BookingService
      */
     protected BookingService $bookingService;
+    protected TicketService $ticketService;
 
     /**
      * Inject the BookingService.
      */
-    public function __construct(BookingService $bookingService)
+    public function __construct(BookingService $bookingService, TicketService $ticketService)
     {
         $this->bookingService = $bookingService;
+        $this->ticketService = $ticketService;
     }
 
     /**
@@ -35,14 +36,8 @@ class BookingController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
+        $bookings = $this->bookingService->getIndexBookings($request);
 
-        if ($user->isAdmin() || $user->isManager()) {
-            $bookings = $this->bookingService->getFilteredBookings($request);
-            return response()->json($bookings);
-        }
-
-        $bookings = Booking::with(['room'])->where('user_id', $user->id)->get();
         return response()->json($bookings);
     }
 
@@ -71,13 +66,9 @@ class BookingController extends Controller
      */
     public function show(Request $request, string $id): JsonResponse
     {
-        $booking = Booking::with(['room'])->findOrFail($id);
+        $booking = $this->bookingService->getBookingForShow($id);
 
         Gate::forUser($request->user('sanctum'))->authorize('view', $booking);
-
-        if (in_array($booking->status, ['confirmed', 'finished'])) {
-            $booking->ticket_url = "/api/bookings/{$booking->id}/ticket";
-        }
 
         return response()->json($booking);
     }
@@ -121,7 +112,7 @@ class BookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
         Gate::authorize('update', $booking);
-        $booking->update(['status' => 'cancelled']);
+        $this->bookingService->cancelBooking($booking);
 
         return response()->json(['message' => 'Бронювання скасовано.']);
     }
@@ -133,21 +124,8 @@ class BookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
         Gate::authorize('update', $booking);
-        
-        // Prevent double sending if already finished
-        if ($booking->status === 'finished') {
-            return response()->json(['message' => 'Бронювання вже завершено.']);
-        }
-        
-        $booking->update(['status' => 'finished']);
-        event(new \App\Events\BookingUpdated($booking));
 
-        $customerEmail = $booking->guest_email ?? $booking->user?->email;
-        if ($customerEmail) {
-            Mail::to($customerEmail)->queue(new RequestReviewMail($booking));
-        }
-
-        return response()->json(['message' => 'Бронювання успішно завершено.']);
+        return response()->json(['message' => $this->bookingService->finishBooking($booking)]);
     }
 
     /**
@@ -167,43 +145,11 @@ class BookingController extends Controller
      */
     public function myBookings(Request $request): JsonResponse
     {
-        $query = Booking::with('room:id,name,image_path,slug')
-            ->where('user_id', $request->user()->id)
-            ->orderBy('created_at', 'desc');
-
-        $type = $request->query('type'); // 'active' or 'past'
-
-        if ($type === 'active') {
-            $bookings = $query->whereIn('status', ['pending', 'confirmed'])->get();
-            $bookings->transform(function ($booking) {
-                if (in_array($booking->status, ['confirmed', 'finished'])) {
-                    $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
-                }
-                return $booking;
-            });
-            return response()->json($bookings);
-        }
-
-        if ($type === 'past') {
-            $perPage = $request->query('per_page', 10);
-            $paginator = $query->whereIn('status', ['finished', 'cancelled'])->paginate($perPage);
-            
-            $paginator->getCollection()->transform(function ($booking) {
-                if (in_array($booking->status, ['confirmed', 'finished'])) {
-                    $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
-                }
-                return $booking;
-            });
-            return response()->json($paginator);
-        }
-
-        // Fallback for full list
-        $bookings = $query->get()->map(function ($booking) {
-            if (in_array($booking->status, ['confirmed', 'finished'])) {
-                $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
-            }
-            return $booking;
-        });
+        $bookings = $this->bookingService->getMyBookings(
+            $request->user(),
+            $request->query('type'),
+            (int) $request->query('per_page', 10)
+        );
 
         return response()->json($bookings);
     }
@@ -211,14 +157,8 @@ class BookingController extends Controller
     /**
      * Hold a specific time slot temporarily.
      */
-    public function holdSlot(Request $request): JsonResponse
+    public function holdSlot(HoldSlotRequest $request): JsonResponse
     {
-        $request->validate([
-            'room_id' => 'required|exists:rooms,id',
-            'start_time' => 'required|date',
-            'hold_token' => 'required|string',
-        ]);
-
         $this->bookingService->holdSlot(
             $request->room_id,
             Carbon::parse($request->start_time),
@@ -231,17 +171,12 @@ class BookingController extends Controller
     /**
      * Release a previously held time slot.
      */
-    public function releaseSlot(Request $request): JsonResponse
+    public function releaseSlot(ReleaseSlotRequest $request): JsonResponse
     {
-        $request->validate([
-            'room_id' => 'required',
-            'start_time' => 'required|date',
-            'hold_token' => 'required|string',
-        ]);
-
         $this->bookingService->releaseHoldToken(
             $request->room_id,
-            Carbon::parse($request->start_time)
+            Carbon::parse($request->start_time),
+            $request->hold_token
         );
 
         return response()->json(['message' => 'Резерв знято.']);
@@ -256,12 +191,7 @@ class BookingController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $pdf = Pdf::loadView('emails.booking_confirmed', [
-            'booking' => $booking,
-            'isPdf' => true
-        ]);
-
-        return $pdf->download("Ticket_Onea_Quests_{$booking->id}.pdf");
+        return $this->ticketService->downloadBookingTicket($booking);
     }
 
     /**
@@ -271,7 +201,7 @@ class BookingController extends Controller
     {
         Gate::authorize('update', $booking);
 
-        $booking->update(['admin_note' => $request->admin_note]);
+        $this->bookingService->updateAdminNote($booking, $request->admin_note);
 
         return response()->json(['message' => 'Note updated']);
     }

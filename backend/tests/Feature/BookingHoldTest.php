@@ -77,4 +77,28 @@ class BookingHoldTest extends TestCase
         $response->assertStatus(409)
             ->assertJson(['message' => 'На жаль, цей час вже заброньовано іншими гравцями.']);
     }
+
+    /**
+     * Test that release endpoint does not allow removing someone else's hold token.
+     */
+    public function test_user_cannot_release_slot_with_wrong_hold_token(): void
+    {
+        $room = Room::factory()->create(['is_active' => true]);
+
+        $startTimeStr = '2026-05-18 14:00:00';
+        $timestamp = Carbon::parse($startTimeStr)->timestamp;
+        $cacheKey = "hold_room_{$room->id}_time_{$timestamp}";
+        Cache::put($cacheKey, 'owner_token', 10 * 60);
+
+        $response = $this->postJson('/api/bookings/release', [
+            'room_id' => $room->id,
+            'start_time' => $startTimeStr,
+            'hold_token' => 'another_token',
+        ]);
+
+        $response->assertStatus(409)
+            ->assertJson(['message' => 'Неможливо зняти резерв: слот утримується іншим токеном.']);
+
+        $this->assertSame('owner_token', Cache::get($cacheKey));
+    }
 }

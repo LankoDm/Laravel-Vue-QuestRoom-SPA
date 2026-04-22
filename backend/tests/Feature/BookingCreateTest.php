@@ -114,4 +114,36 @@ class BookingCreateTest extends TestCase
         // Ensure no new booking was recorded in the database
         $this->assertDatabaseCount('bookings', 0);
     }
+
+    /**
+     * Test that booking fails when hold token was not created beforehand.
+     */
+    public function test_cannot_book_without_existing_hold_token(): void
+    {
+        $room = Room::factory()->create([
+            'is_active' => true,
+            'min_players' => 2,
+            'max_players' => 5,
+            'weekday_price' => 100000,
+            'weekend_price' => 120000,
+        ]);
+
+        $payload = [
+            'room_id' => $room->id,
+            'start_time' => '2026-05-16 14:00:00',
+            'players_count' => 2,
+            'guest_name' => 'Гість',
+            'guest_phone' => '+380 (99) 123-45-67',
+            'payment_method' => 'cash',
+            'total_price' => 100000,
+            'hold_token' => 'non_existing_hold_token',
+        ];
+
+        $response = $this->postJson('/api/bookings', $payload);
+
+        $response->assertStatus(409)
+            ->assertJson(['message' => 'Сесія резерву часу завершилась. Будь ласка, оберіть час ще раз.']);
+
+        $this->assertDatabaseCount('bookings', 0);
+    }
 }

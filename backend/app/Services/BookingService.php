@@ -4,25 +4,81 @@ namespace App\Services;
 
 use App\Models\Booking;
 use App\Models\Room;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Events\BookingCreated;
+use App\Events\BookingUpdated;
 use App\Jobs\FinishBookingJob;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Exceptions\Booking\TimeConflictException;
 use App\Exceptions\Booking\InvalidPlayerCountException;
 use App\Exceptions\Booking\ActiveBookingLimitException;
 use InvalidArgumentException;
 use \Illuminate\Support\Facades\Mail;
 use \App\Mail\BookingConfirmed;
+use \App\Mail\RequestReviewMail;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\URL;
 
 class BookingService
 {
     private const GUEST_PAYMENT_TOKEN_TTL_MINUTES = 20;
+
+    /**
+     * Resolve booking list for index endpoint depending on role.
+     */
+    public function getIndexBookings(Request $request): LengthAwarePaginator|Collection
+    {
+        $user = $request->user();
+
+        if ($user->isAdmin() || $user->isManager()) {
+            return $this->getFilteredBookings($request);
+        }
+
+        return Booking::with(['room'])->where('user_id', $user->id)->get();
+    }
+
+    /**
+     * Load booking for detail endpoint and append ticket URL when applicable.
+     */
+    public function getBookingForShow(string $id): Booking
+    {
+        $booking = Booking::with(['room'])->findOrFail($id);
+
+        if (in_array($booking->status, ['confirmed', 'finished'], true)) {
+            $booking->ticket_url = "/api/bookings/{$booking->id}/ticket";
+        }
+
+        return $booking;
+    }
+
+    /**
+     * Resolve bookings for profile endpoint by type.
+     */
+    public function getMyBookings(User $user, ?string $type, int $perPage = 10): LengthAwarePaginator|Collection
+    {
+        $query = Booking::with('room:id,name,image_path,slug')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc');
+
+        if ($type === 'active') {
+            $bookings = $query->whereIn('status', ['pending', 'confirmed'])->get();
+            return $this->attachSignedTicketUrls($bookings);
+        }
+
+        if ($type === 'past') {
+            $paginator = $query->whereIn('status', ['finished', 'cancelled'])->paginate($perPage);
+            $paginator->setCollection($this->attachSignedTicketUrls($paginator->getCollection()));
+
+            return $paginator;
+        }
+
+        return $this->attachSignedTicketUrls($query->get());
+    }
 
     /**
      * Get paginated and filtered bookings for Admin/Manager dashboard.
@@ -115,7 +171,7 @@ class BookingService
                 'payment_method' => $data['payment_method'],
             ]);
 
-            $this->releaseHoldToken($room->id, $startTime);
+            $this->releaseHoldToken($room->id, $startTime, $data['hold_token']);
 
             $booking->load('room');
             BookingCreated::dispatch($booking);
@@ -179,6 +235,42 @@ class BookingService
     }
 
     /**
+     * Cancel booking.
+     */
+    public function cancelBooking(Booking $booking): void
+    {
+        $booking->update(['status' => 'cancelled']);
+    }
+
+    /**
+     * Finish booking and notify customer.
+     */
+    public function finishBooking(Booking $booking): string
+    {
+        if ($booking->status === 'finished') {
+            return 'Бронювання вже завершено.';
+        }
+
+        $booking->update(['status' => 'finished']);
+        event(new BookingUpdated($booking));
+
+        $customerEmail = $booking->guest_email ?? $booking->user?->email;
+        if ($customerEmail) {
+            Mail::to($customerEmail)->queue(new RequestReviewMail($booking));
+        }
+
+        return 'Бронювання успішно завершено.';
+    }
+
+    /**
+     * Update admin note for booking.
+     */
+    public function updateAdminNote(Booking $booking, ?string $note): void
+    {
+        $booking->update(['admin_note' => $note]);
+    }
+
+    /**
      * Hold a specific time slot in cache.
      */
     public function holdSlot(int $roomId, Carbon $startTime, string $token): void
@@ -196,9 +288,19 @@ class BookingService
     /**
      * Release a held slot from cache.
      */
-    public function releaseHoldToken(int $roomId, Carbon $startTime): void
+    public function releaseHoldToken(int $roomId, Carbon $startTime, string $token): void
     {
         $cacheKey = "hold_room_{$roomId}_time_{$startTime->timestamp}";
+        $holder = Cache::get($cacheKey);
+
+        if ($holder === null) {
+            return;
+        }
+
+        if (!is_string($holder) || !hash_equals($holder, $token)) {
+            throw new TimeConflictException('Неможливо зняти резерв: слот утримується іншим токеном.');
+        }
+
         Cache::forget($cacheKey);
     }
 
@@ -258,7 +360,11 @@ class BookingService
         $cacheKey = "hold_room_{$roomId}_time_{$startTime->timestamp}";
         $holder = Cache::get($cacheKey);
 
-        if ($holder && $holder !== $token) {
+        if ($holder === null) {
+            throw new TimeConflictException('Сесія резерву часу завершилась. Будь ласка, оберіть час ще раз.');
+        }
+
+        if (!is_string($holder) || !hash_equals($holder, $token)) {
             throw new TimeConflictException('На жаль, хтось інший вже почав оформлювати цей час.');
         }
     }
@@ -282,5 +388,16 @@ class BookingService
     private function guestPaymentTokenCacheKey(int $bookingId): string
     {
         return "guest_payment_token_booking_{$bookingId}";
+    }
+
+    private function attachSignedTicketUrls(Collection $bookings): Collection
+    {
+        return $bookings->map(function (Booking $booking) {
+            if (in_array($booking->status, ['confirmed', 'finished'], true)) {
+                $booking->ticket_url = URL::signedRoute('ticket.download', ['booking' => $booking->id]);
+            }
+
+            return $booking;
+        });
     }
 }
