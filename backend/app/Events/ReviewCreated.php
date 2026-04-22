@@ -47,7 +47,7 @@ class ReviewCreated implements ShouldBroadcast
                 'id' => $this->review->id,
                 'room_id' => $this->review->room_id,
                 'rating' => $this->review->rating,
-                'comment' => $this->review->comment,
+                'message' => $this->review->message,
                 'is_approved' => $this->review->is_approved,
                 'user' => [
                     'name' => $this->review->user->name ?? 'Гість',
