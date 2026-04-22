@@ -49,9 +49,13 @@ class RoomController extends Controller
     /**
      * Display the specified room by Slug or ID.
      */
-    public function show(string $identifier): RoomResource
+    public function show(Request $request, string $identifier): RoomResource
     {
         $room = $this->roomService->getRoomByIdentifier($identifier);
+
+        if (!$room->is_active && !$this->roomService->canViewInactiveRooms($request)) {
+            abort(404);
+        }
 
         return new RoomResource($room);
     }
@@ -59,10 +63,10 @@ class RoomController extends Controller
     /**
      * Update the specified room in storage.
      */
-    public function update(RoomRequest $request, string $id): RoomResource
+    public function update(RoomRequest $request, string $roomIdentifier): RoomResource
     {
         $validatedData = $request->validated();
-        $room = Room::findOrFail($id);
+        $room = $this->roomService->findRoomByIdentifier($roomIdentifier);
 
         if ($request->hasFile('image_path')) {
             // Delete old images before saving new ones to save disk space
@@ -80,11 +84,11 @@ class RoomController extends Controller
     /**
      * Toggle the active status of the room.
      */
-    public function toggleStatus(Request $request, string $id): JsonResponse
+    public function toggleStatus(Request $request, string $roomIdentifier): JsonResponse
     {
         $request->validate(['is_active' => 'required|boolean']);
 
-        $room = Room::findOrFail($id);
+        $room = $this->roomService->findRoomByIdentifier($roomIdentifier);
         $room->update(['is_active' => $request->is_active]);
 
         return response()->json([
@@ -96,9 +100,9 @@ class RoomController extends Controller
     /**
      * Remove the specified room from storage.
      */
-    public function destroy(string $id): JsonResponse
+    public function destroy(string $roomIdentifier): JsonResponse
     {
-        $room = Room::findOrFail($id);
+        $room = $this->roomService->findRoomByIdentifier($roomIdentifier);
 
         // Clean up the disk
         $this->roomService->deleteOldImages($room->image_path);
