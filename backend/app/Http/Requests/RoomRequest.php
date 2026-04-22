@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Room;
 use Illuminate\Validation\Rule;
 
 class RoomRequest extends FormRequest
@@ -23,7 +24,15 @@ class RoomRequest extends FormRequest
     public function rules(): array
     {
         $room = $this->route('room');
-        $roomId = is_object($room) ? $room->id : $room;
+        $roomId = null;
+
+        if (is_object($room)) {
+            $roomId = $room->id;
+        } elseif (is_numeric($room)) {
+            $roomId = (int) $room;
+        } elseif (is_string($room) && $room !== '') {
+            $roomId = Room::where('slug', $room)->value('id');
+        }
 
         return [
             'name' => [

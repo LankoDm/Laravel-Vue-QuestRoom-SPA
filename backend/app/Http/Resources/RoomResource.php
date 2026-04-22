@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class RoomResource extends JsonResource
 {
@@ -19,9 +20,24 @@ class RoomResource extends JsonResource
         $imageUrls = [];
         if (is_array($images)) {
             foreach ($images as $path) {
-                $imageUrls[] = str_starts_with($path, 'http') ? $path : asset('storage/' . $path);
+                if (!is_string($path) || $path === '') {
+                    continue;
+                }
+
+                if (str_starts_with($path, 'http')) {
+                    $imageUrls[] = $path;
+                    continue;
+                }
+
+                if (str_starts_with($path, 'questroom/')) {
+                    $imageUrls[] = Storage::disk('cloudinary')->url($path);
+                    continue;
+                }
+
+                $imageUrls[] = asset('storage/' . ltrim($path, '/'));
             }
         }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -37,7 +53,7 @@ class RoomResource extends JsonResource
             'weekend_price' => $this->weekend_price,
             'duration_minutes' => $this->duration_minutes,
             'is_active' => $this->is_active,
-            'image_path' => json_encode($imageUrls),
+            'image_path' => $imageUrls,
 
             'rating' => round($this->reviews_avg_rating ?? 0, 1),
             'reviews_count' => $this->reviews_count ?? 0,
