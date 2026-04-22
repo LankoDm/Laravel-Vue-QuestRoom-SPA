@@ -26,11 +26,11 @@ class PasswordResetController extends Controller
      */
     public function sendResetLinkEmail(ForgotPasswordRequest $request): JsonResponse
     {
-        $status = $this->authService->sendResetLink($request->validated());
+        $this->authService->sendResetLink($request->validated());
 
-        return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => 'Посилання для відновлення пароля відправлено на ваш email.'])
-            : response()->json(['message' => 'Не вдалося відправити лист. Спробуйте пізніше.'], 400);
+        return response()->json([
+            'message' => 'Якщо такий email існує, посилання для відновлення пароля буде надіслано.'
+        ]);
     }
 
     /**
