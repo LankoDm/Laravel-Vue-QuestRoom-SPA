@@ -29,7 +29,7 @@ class BookingRequest extends FormRequest
             'guest_phone' => ['required', 'string', 'regex:/^\+380 \(\d{2}\) \d{3}-\d{2}-\d{2}$/'],
             'guest_email' => 'nullable|email|max:255',
             'comment' => 'nullable|string',
-            'payment_method' => 'required|in:cash,card,paypal',
+            'payment_method' => 'required|in:cash,card',
             'total_price' => 'required|integer',
         ];
     }
