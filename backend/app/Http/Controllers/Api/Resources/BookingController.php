@@ -58,6 +58,11 @@ class BookingController extends Controller
             $userId
         );
 
+        $guestPaymentToken = $this->bookingService->issueGuestPaymentToken($booking);
+        if ($guestPaymentToken) {
+            $booking->setAttribute('payment_token', $guestPaymentToken);
+        }
+
         return response()->json($booking, 201);
     }
 

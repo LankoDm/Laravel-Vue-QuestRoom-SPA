@@ -18,9 +18,12 @@ use \Illuminate\Support\Facades\Mail;
 use \App\Mail\BookingConfirmed;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 
 class BookingService
 {
+    private const GUEST_PAYMENT_TOKEN_TTL_MINUTES = 20;
+
     /**
      * Get paginated and filtered bookings for Admin/Manager dashboard.
      */
@@ -119,6 +122,40 @@ class BookingService
 
             return $booking;
         });
+    }
+
+    /**
+     * Issue a short-lived token that allows a guest booking to initialize card payment.
+     */
+    public function issueGuestPaymentToken(Booking $booking): ?string
+    {
+        if ($booking->user_id !== null || $booking->payment_method !== 'card') {
+            return null;
+        }
+
+        $token = Str::random(64);
+
+        Cache::put(
+            $this->guestPaymentTokenCacheKey($booking->id),
+            hash('sha256', $token),
+            now()->addMinutes(self::GUEST_PAYMENT_TOKEN_TTL_MINUTES)
+        );
+
+        return $token;
+    }
+
+    /**
+     * Validate a guest payment token for the given booking.
+     */
+    public function validateGuestPaymentToken(Booking $booking, ?string $token): bool
+    {
+        if (!$token) {
+            return false;
+        }
+
+        $storedHash = Cache::get($this->guestPaymentTokenCacheKey($booking->id));
+
+        return is_string($storedHash) && hash_equals($storedHash, hash('sha256', $token));
     }
 
     /**
@@ -240,5 +277,10 @@ class BookingService
         if ($isConflict) {
             throw new TimeConflictException('На жаль, цей час вже заброньовано іншими гравцями.');
         }
+    }
+
+    private function guestPaymentTokenCacheKey(int $bookingId): string
+    {
+        return "guest_payment_token_booking_{$bookingId}";
     }
 }

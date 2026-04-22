@@ -91,7 +91,10 @@ const submitBooking = async () => {
         const createdBooking = response.data;
 
         if (bookingForm.value.payment_method === 'card') {
-            const paymentResponse = await axios.post(`/bookings/${createdBooking.id}/pay`);
+            const paymentPayload = createdBooking.payment_token
+                ? { payment_token: createdBooking.payment_token }
+                : {};
+            const paymentResponse = await axios.post(`/bookings/${createdBooking.id}/pay`, paymentPayload);
             window.location.href = paymentResponse.data.url;
             return;
         }
