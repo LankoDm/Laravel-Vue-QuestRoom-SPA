@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Room;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -50,5 +52,40 @@ class RoomApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonPath('data.name', 'Тестова Кімната')
             ->assertJsonPath('data.slug', 'testova-kimnata');
+    }
+
+    /**
+     * Inactive room details should not be exposed to guests.
+     */
+    public function test_guest_cannot_fetch_inactive_room(): void
+    {
+        $room = Room::factory()->create([
+            'is_active' => false,
+            'slug' => 'inactive-room',
+        ]);
+
+        $response = $this->getJson('/api/rooms/' . $room->slug);
+
+        $response->assertStatus(404);
+    }
+
+    /**
+     * Only manager/admin can request show_all and see inactive rooms.
+     */
+    public function test_show_all_is_staff_only(): void
+    {
+        Room::factory()->count(2)->create(['is_active' => true]);
+        Room::factory()->create(['is_active' => false]);
+
+        $guestResponse = $this->getJson('/api/rooms?show_all=1');
+        $guestResponse->assertStatus(200)
+            ->assertJsonCount(2, 'data');
+
+        $manager = User::factory()->create(['role' => 'manager']);
+        Sanctum::actingAs($manager);
+
+        $staffResponse = $this->getJson('/api/rooms?show_all=1');
+        $staffResponse->assertStatus(200)
+            ->assertJsonCount(3, 'data');
     }
 }
