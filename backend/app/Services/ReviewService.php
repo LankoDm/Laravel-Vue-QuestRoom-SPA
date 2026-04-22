@@ -5,8 +5,9 @@ namespace App\Services;
 use App\Models\Review;
 use App\Events\ReviewCreated;
 use App\Exceptions\Review\ReviewAlreadyExistsException;
+use App\Models\Booking;
 use App\Models\Room;
-use Illuminate\Database\Eloquent\Collection;
+use App\Models\User;
 use \Illuminate\Http\Request;
 
 class ReviewService
@@ -50,7 +51,7 @@ class ReviewService
     /**
      * Create a new review if the user hasn't reviewed this room yet.
      */
-    public function createReview(array $data, object $user): Review
+    public function createReview(array $data, User $user): Review
     {
         $alreadyReviewed = Review::where('user_id', $user->id)
             ->where('room_id', $data['room_id'])
@@ -75,20 +76,18 @@ class ReviewService
     /**
      * Create a new guest review based on a booking.
      */
-    public function createGuestReview(array $data, \App\Models\Booking $booking): Review
+    public function createGuestReview(array $data, Booking $booking): Review
     {
-        $guestName = $data['guest_name'] ?? $booking->guest_name;
+        $guestName = $booking->guest_name;
 
-        $alreadyReviewed = Review::whereNull('user_id')
-            ->where('room_id', $booking->room_id)
-            ->where('guest_name', $guestName)
-            ->exists();
+        $alreadyReviewed = Review::where('booking_id', $booking->id)->exists();
 
         if ($alreadyReviewed) {
             throw new ReviewAlreadyExistsException('Ви вже залишили свій відгук. Дякуємо!');
         }
 
         $review = Review::create([
+            'booking_id' => $booking->id,
             'user_id' => null,
             'guest_name' => $guestName,
             'room_id' => $booking->room_id,
