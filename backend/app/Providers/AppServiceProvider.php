@@ -37,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
             return $frontendUrl . '/reset-password?token=' . $token . '&email=' . $notifiable->getEmailForPasswordReset();
         });
         Gate::define('view-dashboard', function (User $user) {
-            return $user->isAdmin() || $user->isManager();
+            return $user->isAdmin();
         });
     }
 }
