@@ -33,9 +33,9 @@ class SocialAuthController extends Controller
     /**
      * Handle the callback from Google and redirect back to the frontend.
      */
-    public function handleGoogleCallback(): RedirectResponse
+    public function handleGoogleCallback(Request $request): RedirectResponse
     {
-        $redirectUrl = $this->authService->handleGoogleCallback();
+        $redirectUrl = $this->authService->handleGoogleCallback($request->query('state'));
 
         return redirect()->away($redirectUrl);
     }

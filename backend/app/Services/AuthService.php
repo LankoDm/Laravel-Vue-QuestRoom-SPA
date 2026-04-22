@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Password;
@@ -57,7 +58,11 @@ class AuthService
      */
     public function logout(User $user): void
     {
-        $user->currentAccessToken()->delete();
+        $token = $user->currentAccessToken();
+
+        if ($token) {
+            $token->delete();
+        }
     }
 
     /**
@@ -65,17 +70,28 @@ class AuthService
      */
     public function getGoogleRedirectUrl(): string
     {
-        return Socialite::driver('google')->stateless()->redirect()->getTargetUrl();
+        $state = Str::random(64);
+        Cache::put($this->googleStateCacheKey($state), true, now()->addMinutes(10));
+
+        return Socialite::driver('google')
+            ->stateless()
+            ->with(['state' => $state])
+            ->redirect()
+            ->getTargetUrl();
     }
 
     /**
      * Handle the callback from Google OAuth and authenticate/register the user.
      */
-    public function handleGoogleCallback(): string
+    public function handleGoogleCallback(?string $state = null): string
     {
         $frontendUrl = rtrim(config('app.frontend_url', 'http://localhost:5173'), '/');
 
         try {
+            if (!$state || !Cache::pull($this->googleStateCacheKey($state))) {
+                throw new Exception('Invalid OAuth state.');
+            }
+
             $googleUser = Socialite::driver('google')->stateless()->user();
             if (isset($googleUser->user['email_verified']) && !$googleUser->user['email_verified']) {
                 throw new Exception('Google email is not verified.');
@@ -104,11 +120,17 @@ class AuthService
             $user->tokens()->delete();
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            return $frontendUrl . '/auth/callback?token=' . $token;
+            // A URL fragment is used to prevent the token from being sent via the Referer header in subsequent requests.
+            return $frontendUrl . '/auth/callback#token=' . $token;
 
         } catch (Exception $e) {
             return $frontendUrl . '/login?error=google_auth_failed';
         }
+    }
+
+    private function googleStateCacheKey(string $state): string
+    {
+        return 'oauth:google:state:' . $state;
     }
 
     /**

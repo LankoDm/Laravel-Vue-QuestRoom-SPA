@@ -14,13 +14,13 @@ const authStore = useAuthStore();
  * and fetches the user profile.
  */
 onMounted(async () => {
-    const token = route.query.token;
+    const fragmentToken = new URLSearchParams(window.location.hash.slice(1)).get('token');
+    const token = fragmentToken || route.query.token;
 
     if (token) {
         localStorage.setItem('token', token);
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         authStore.token = token;
-        authStore.isAuthenticated = true;
 
         try {
             await authStore.fetchUser();
