@@ -6,6 +6,7 @@ use App\Interfaces\PaymentGatewayInterface;
 use App\Models\Booking;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
+use Stripe\Exception\ApiErrorException;
 
 class StripePaymentService implements PaymentGatewayInterface
 {
@@ -16,6 +17,7 @@ class StripePaymentService implements PaymentGatewayInterface
     public function createPaymentUrl(Booking $booking): string
     {
         Stripe::setApiKey(config('services.stripe.secret'));
+        $booking->loadMissing(['room', 'user']);
 
         $customerEmail = $booking->guest_email ?? $booking->user?->email;
         $frontendUrl = rtrim(config('app.frontend_url', 'http://localhost:5173'), '/');
@@ -45,7 +47,11 @@ class StripePaymentService implements PaymentGatewayInterface
             $sessionConfig['customer_email'] = $customerEmail;
         }
 
-        $session = Session::create($sessionConfig);
+        try {
+            $session = Session::create($sessionConfig);
+        } catch (ApiErrorException $e) {
+            throw new \RuntimeException('Stripe checkout session creation failed.', 0, $e);
+        }
 
         // Store or update the pending transaction in the database
         $booking->payment()->updateOrCreate(
@@ -58,6 +64,10 @@ class StripePaymentService implements PaymentGatewayInterface
                 'payment_method' => 'stripe'
             ]
         );
+
+        if (!$session->url) {
+            throw new \RuntimeException('Stripe checkout session URL is empty.');
+        }
 
         return $session->url;
     }
