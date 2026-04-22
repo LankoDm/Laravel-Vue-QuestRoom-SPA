@@ -64,6 +64,10 @@ class StripeWebhookController extends Controller
 
         $payment = Payment::where('booking_id', $bookingId)->first();
 
+        if ($payment && $payment->status === 'succeeded' && $payment->transaction_id === $session->id) {
+            return;
+        }
+
         if ($payment) {
             $payment->update([
                 'status' => 'succeeded',
@@ -74,8 +78,16 @@ class StripeWebhookController extends Controller
         $booking = Booking::find($bookingId);
 
         if ($booking) {
-            $booking->update(['status' => 'confirmed']);
+            $wasAlreadyConfirmed = in_array($booking->status, ['confirmed', 'finished'], true);
+            $booking->update([
+                'status' => $wasAlreadyConfirmed ? $booking->status : 'confirmed',
+                'payment_status' => 'paid',
+            ]);
             $booking->load('room');
+
+            if ($wasAlreadyConfirmed) {
+                return;
+            }
 
             event(new BookingUpdated($booking));
 
