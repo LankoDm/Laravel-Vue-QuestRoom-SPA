@@ -73,8 +73,11 @@ const fetchPastBookings = async (page = 1) => {
 
 const fetchMyBookings = async () => {
     isLoading.value = true;
-    await Promise.all([fetchActiveBookings(), fetchPastBookings(historyPage.value)]);
+    await fetchActiveBookings();
     isLoading.value = false;
+
+    // Load history after first meaningful paint for faster perceived response.
+    fetchPastBookings(historyPage.value);
 };
 
 watch(historyPage, (newVal, oldVal) => {
@@ -238,8 +241,25 @@ onMounted(() => fetchMyBookings());
             <div class="lg:col-span-2">
                 <h2 class="text-3xl font-black text-text mb-8">Мої бронювання</h2>
 
-                <div v-if="isLoading" class="text-center py-20 text-gray-400 animate-pulse font-bold">
-                    Завантаження історії
+                <div v-if="isLoading" class="space-y-6 min-h-[700px]">
+                    <div class="bg-white p-6 rounded-2xl border border-secondary animate-pulse">
+                        <div class="h-5 w-40 bg-gray-200 rounded mb-4"></div>
+                        <div class="space-y-4">
+                            <div v-for="index in 3" :key="'active-skeleton-' + index" class="flex items-center gap-4">
+                                <div class="w-14 h-14 rounded-xl bg-gray-200 shrink-0"></div>
+                                <div class="flex-1 space-y-2">
+                                    <div class="h-4 w-1/2 bg-gray-200 rounded"></div>
+                                    <div class="h-3 w-1/3 bg-gray-200 rounded"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-secondary animate-pulse">
+                        <div class="h-5 w-24 bg-gray-200 rounded mb-4"></div>
+                        <div class="space-y-3">
+                            <div v-for="index in 4" :key="'past-skeleton-' + index" class="h-12 bg-gray-200 rounded"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div v-else class="space-y-10">
@@ -256,6 +276,8 @@ onMounted(() => fetchMyBookings());
                                  class="bg-white p-4 sm:p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:border-primary transition-colors">
                                 <div class="flex items-center gap-3 sm:gap-4 overflow-hidden w-full sm:w-auto">
                                     <img v-if="booking.room?.image_path" :src="getFirstImage(booking.room.image_path)"
+                                         loading="lazy"
+                                         decoding="async"
                                          class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover shrink-0"/>
                                     <div class="min-w-0"><h4 class="font-bold text-base sm:text-lg text-text truncate"
                                                              :title="booking.room?.name">
@@ -294,6 +316,8 @@ onMounted(() => fetchMyBookings());
                                  class="bg-white p-4 sm:p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 opacity-80 hover:opacity-100 transition-opacity">
                                 <div class="flex items-center gap-3 sm:gap-4 overflow-hidden w-full sm:w-auto">
                                     <img v-if="booking.room?.image_path" :src="getFirstImage(booking.room.image_path)"
+                                         loading="lazy"
+                                         decoding="async"
                                          class="w-12 h-12 rounded-xl object-cover shrink-0 grayscale"/>
                                     <div class="min-w-0">
                                         <h4 class="font-bold text-sm sm:text-base text-text truncate"
