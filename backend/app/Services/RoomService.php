@@ -79,7 +79,7 @@ class RoomService
      */
     public function canViewInactiveRooms(Request $request): bool
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?? $request->user();
 
         if (!$user) {
             return false;

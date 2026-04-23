@@ -88,4 +88,22 @@ class RoomApiTest extends TestCase
         $staffResponse->assertStatus(200)
             ->assertJsonCount(3, 'data');
     }
+
+    /**
+     * Staff should see inactive rooms via Bearer token on public endpoint.
+     */
+    public function test_show_all_works_with_sanctum_bearer_token(): void
+    {
+        Room::factory()->count(2)->create(['is_active' => true]);
+        Room::factory()->create(['is_active' => false]);
+
+        $manager = User::factory()->create(['role' => 'manager']);
+        $token = $manager->createToken('room-admin')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson('/api/rooms?show_all=1');
+
+        $response->assertStatus(200)
+            ->assertJsonCount(3, 'data');
+    }
 }
