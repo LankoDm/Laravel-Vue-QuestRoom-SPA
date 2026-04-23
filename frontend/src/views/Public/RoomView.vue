@@ -224,7 +224,7 @@ onUnmounted(() => {
 
                     <div class="prose max-w-none text-text">
                         <h2 class="text-2xl font-bold mb-4">Про квест</h2>
-                        <p class="whitespace-pre-line">{{ room.description }}</p>
+                        <p class="whitespace-pre-line break-words">{{ room.description }}</p>
                     </div>
 
                     <RoomMiniGame v-if="room.hint_phrase" :hint-phrase="room.hint_phrase"/>
