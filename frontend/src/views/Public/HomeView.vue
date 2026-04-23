@@ -241,11 +241,22 @@ onMounted(() => fetchRooms());
                     </div>
                 </div>
 
-                <div class="w-full lg:w-3/4">
+                <div class="w-full lg:w-3/4 min-h-[900px]">
 
-                    <div v-if="isLoading"
-                         class="text-center text-xl text-primary animate-pulse py-20 font-bold bg-white rounded-3xl border border-secondary shadow-sm">
-                        Завантаження квестів
+                    <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                        <div
+                            v-for="index in 6"
+                            :key="index"
+                            class="bg-white rounded-3xl shadow-sm border border-secondary overflow-hidden flex flex-col animate-pulse"
+                        >
+                            <div class="h-56 w-full bg-gray-200"></div>
+                            <div class="p-6 space-y-4">
+                                <div class="h-6 w-3/4 bg-gray-200 rounded"></div>
+                                <div class="h-4 w-1/2 bg-gray-200 rounded"></div>
+                                <div class="h-4 w-full bg-gray-200 rounded"></div>
+                                <div class="h-4 w-5/6 bg-gray-200 rounded"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div v-else-if="rooms.length === 0"
@@ -262,9 +273,11 @@ onMounted(() => fetchRooms());
 
                             <div class="h-56 w-full bg-gray-100 relative overflow-hidden">
                                 <img
-                                    v-if="getFirstImage(room.image_path)"
-                                    :src="getFirstImage(room.image_path)"
+                                    v-if="room.first_image_url || getFirstImage(room.image_path)"
+                                    :src="room.first_image_url || getFirstImage(room.image_path)"
                                     :alt="room.name"
+                                    loading="lazy"
+                                    decoding="async"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
                                 <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
                                     Немає зображення
