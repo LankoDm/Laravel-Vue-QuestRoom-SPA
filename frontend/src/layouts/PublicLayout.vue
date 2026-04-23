@@ -6,6 +6,7 @@ import axios from 'axios';
 
 const authStore = useAuthStore();
 const footerRooms = ref([]);
+const isFooterLoading = ref(true);
 const isMobileMenuOpen = ref(false);
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value;
@@ -21,6 +22,8 @@ onMounted(async () => {
     footerRooms.value = data.filter(room => room.is_active);
   } catch (error) {
     console.error('Помилка завантаження квестів для футера:', error);
+  } finally {
+    isFooterLoading.value = false;
   }
 });
 </script>
@@ -116,9 +119,16 @@ onMounted(async () => {
     </main>
     <footer class="bg-white border-t border-secondary mt-12 shrink-0">
       <div class="max-w-6xl mx-auto px-6 py-12">
-        <div v-if="footerRooms.length > 0" class="mb-12">
+        <div class="mb-12 min-h-[120px]">
           <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Наші квести</h3>
-          <div class="flex flex-wrap gap-x-10 gap-y-4">
+          <div v-if="isFooterLoading" class="flex flex-wrap gap-x-10 gap-y-4">
+            <span
+              v-for="index in 8"
+              :key="index"
+              class="h-4 w-28 rounded bg-gray-200 animate-pulse"
+            ></span>
+          </div>
+          <div v-else-if="footerRooms.length > 0" class="flex flex-wrap gap-x-10 gap-y-4">
             <RouterLink
                 v-for="room in footerRooms"
                 :key="room.id"
@@ -128,6 +138,7 @@ onMounted(async () => {
               <span class="truncate">{{ room.name }}</span>
             </RouterLink>
           </div>
+          <div v-else class="h-4"></div>
         </div>
         <div class="flex flex-col md:flex-row justify-between items-center gap-6 pt-8 border-t border-secondary">
           <div class="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
