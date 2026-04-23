@@ -23,6 +23,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Storage;
 
 class BookingService
 {
@@ -49,6 +50,12 @@ class BookingService
     {
         $booking = Booking::with(['room'])->findOrFail($id);
 
+        if ($booking->relationLoaded('room') && $booking->room) {
+            $firstImageUrl = $this->resolveFirstRoomImageUrl($booking->room->image_path);
+            $booking->room->setAttribute('image_path', $firstImageUrl);
+            $booking->room->setAttribute('first_image_url', $firstImageUrl);
+        }
+
         if (in_array($booking->status, ['confirmed', 'finished'], true)) {
             $booking->ticket_url = "/api/bookings/{$booking->id}/ticket";
         }
@@ -67,17 +74,18 @@ class BookingService
 
         if ($type === 'active') {
             $bookings = $query->whereIn('status', ['pending', 'confirmed'])->get();
-            return $this->attachSignedTicketUrls($bookings);
+            return $this->attachSignedTicketUrls($this->normalizeRoomImages($bookings));
         }
 
         if ($type === 'past') {
             $paginator = $query->whereIn('status', ['finished', 'cancelled'])->paginate($perPage);
-            $paginator->setCollection($this->attachSignedTicketUrls($paginator->getCollection()));
+            $normalized = $this->normalizeRoomImages($paginator->getCollection());
+            $paginator->setCollection($this->attachSignedTicketUrls($normalized));
 
             return $paginator;
         }
 
-        return $this->attachSignedTicketUrls($query->get());
+        return $this->attachSignedTicketUrls($this->normalizeRoomImages($query->get()));
     }
 
     /**
@@ -399,5 +407,51 @@ class BookingService
 
             return $booking;
         });
+    }
+
+    /**
+     * Normalize room image paths to browser-ready URLs in booking payloads.
+     */
+    private function normalizeRoomImages(Collection $bookings): Collection
+    {
+        return $bookings->map(function (Booking $booking) {
+            if ($booking->relationLoaded('room') && $booking->room) {
+                $firstImageUrl = $this->resolveFirstRoomImageUrl($booking->room->image_path);
+                $booking->room->setAttribute('image_path', $firstImageUrl);
+                $booking->room->setAttribute('first_image_url', $firstImageUrl);
+            }
+
+            return $booking;
+        });
+    }
+
+    /**
+     * Resolve room image field (json string/array/path) to url array.
+     */
+    private function resolveFirstRoomImageUrl(mixed $imagePath): ?string
+    {
+        $images = is_string($imagePath) ? json_decode($imagePath, true) : $imagePath;
+
+        if (!is_array($images)) {
+            return null;
+        }
+
+        foreach ($images as $path) {
+            if (!is_string($path) || $path === '') {
+                continue;
+            }
+
+            if (str_starts_with($path, 'http')) {
+                return $path;
+            }
+
+            if (str_starts_with($path, 'questroom/')) {
+                return Storage::disk('cloudinary')->url($path);
+            }
+
+            return asset('storage/' . ltrim($path, '/'));
+        }
+
+        return null;
     }
 }
