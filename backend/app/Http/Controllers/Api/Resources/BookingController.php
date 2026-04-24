@@ -49,8 +49,9 @@ class BookingController extends Controller
         $userId = $request->user('sanctum')?->id;
 
         $booking = $this->bookingService->createBooking(
-            $request->validated() + ['hold_token' => $request->hold_token],
-            $userId
+            $request->validated(),
+            $request->user()?->id,
+            $request->ip()
         );
 
         $guestPaymentToken = $this->bookingService->issueGuestPaymentToken($booking);

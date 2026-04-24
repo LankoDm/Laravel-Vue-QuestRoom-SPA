@@ -147,15 +147,15 @@ class BookingService
     /**
      * Create a new booking and dispatch events.
      */
-    public function createBooking(array $data, ?int $userId): Booking
+    public function createBooking(array $data, ?int $userId, ?string $ipAddress = null): Booking
     {
-        return DB::transaction(function () use ($data, $userId) {
+        return DB::transaction(function () use ($data, $userId, $ipAddress) {
             $room = Room::lockForUpdate()->findOrFail($data['room_id']);
             $startTime = Carbon::parse($data['start_time']);
             $endTime = $startTime->copy()->addMinutes($room->duration_minutes);
 
             $this->validatePlayersCount($room, $data['players_count']);
-            $this->checkActiveBookingsLimit($userId, $data['guest_phone'], $data['guest_email'] ?? null);
+            $this->checkActiveBookingsLimit($userId, $ipAddress, $data['guest_phone']);
             $this->verifyHoldToken($room->id, $startTime, $data['hold_token']);
             $this->checkTimeConflict($room->id, $startTime, $endTime);
 
@@ -167,6 +167,7 @@ class BookingService
             $booking = Booking::create([
                 'user_id' => $userId,
                 'room_id' => $room->id,
+                'ip_address' => $ipAddress,
                 'start_time' => $startTime,
                 'end_time' => $endTime,
                 'players_count' => $data['players_count'],
@@ -337,26 +338,39 @@ class BookingService
     }
 
     /**
-     * Prevent spam bookings from the same user/phone.
+     * Prevent spam bookings from the same IP address or User.
      */
-    private function checkActiveBookingsLimit(?int $userId, string $phone, ?string $email): void
+    private function checkActiveBookingsLimit(?int $userId, ?string $ipAddress, string $phone): void
     {
-        $activeBookingsCount = Booking::whereIn('status', ['pending', 'confirmed'])
-            ->where('start_time', '>=', now())
-            ->where(function ($query) use ($userId, $phone, $email) {
-                $query->where(function($inner) use ($phone, $email) {
-                    $inner->where('guest_phone', $phone);
-                    if (!empty($email)) {
-                        $inner->orWhere('guest_email', $email);
-                    }
-                });
-                if ($userId) {
-                    $query->orWhere('user_id', $userId);
-                }
-            })->count();
+        if ($userId) {
+            $userBookings = Booking::whereIn('status', ['pending', 'confirmed'])
+                ->where('user_id', $userId)
+                ->count();
 
-        if ($activeBookingsCount >= 2) {
-            throw new ActiveBookingLimitException('Ви вже маєте 2 активних бронювання. Щоб забронювати більше ігор, зателевонуйте нам.');
+            if ($userBookings >= 2) {
+                throw new ActiveBookingLimitException('Ви вже маєте 2 активних бронювання на своєму акаунті. Дочекайтесь їх завершення.');
+            }
+            return;
+        }
+
+        $phoneDigits = preg_replace('/\D/', '', $phone);
+        if (!empty($phoneDigits)) {
+            $phoneBookings = Booking::whereIn('status', ['pending', 'confirmed'])
+                ->whereRaw("REGEXP_REPLACE(guest_phone, '[^0-9]', '') = ?", [$phoneDigits])
+                ->count();
+
+            if ($phoneBookings >= 2) {
+                throw new ActiveBookingLimitException('З цього номеру телефону вже є 2 активних бронювання. Дочекайтесь їх завершення.');
+            }
+        }
+        if ($ipAddress) {
+            $ipBookings = Booking::whereIn('status', ['pending', 'confirmed'])
+                ->where('ip_address', $ipAddress)
+                ->count();
+
+            if ($ipBookings >= 10) {
+                throw new ActiveBookingLimitException('Забагато запитів з вашої мережі. Будь ласка, увійдіть в акаунт або спробуйте пізніше.');
+            }
         }
     }
 
@@ -430,6 +444,10 @@ class BookingService
      */
     private function resolveFirstRoomImageUrl(mixed $imagePath): ?string
     {
+        if (is_string($imagePath) && str_starts_with($imagePath, 'http')) {
+            return $imagePath;
+        }
+
         $images = is_string($imagePath) ? json_decode($imagePath, true) : $imagePath;
 
         if (!is_array($images)) {
