@@ -29,7 +29,7 @@ const fetchUsers = async () => {
                 email: searchQuery.value
             }
         });
-        
+
         users.value = response.data.data;
         const meta = response.data.meta || response.data;
         currentPage.value = meta.current_page || 1;
@@ -78,6 +78,23 @@ const updateRole = async (user, newRole) => {
     }
 };
 
+/**
+ * Toggle the blocked status of a specific user.
+ * Includes optimistic UI update with a fallback on failure.
+ */
+const toggleBlock = async (user) => {
+    const oldStatus = user.is_blocked;
+    user.is_blocked = !user.is_blocked;
+
+    try {
+        const response = await axios.patch(`/users/${user.id}/toggle-block`);
+        toast.success(response.data.message);
+    } catch (error) {
+        user.is_blocked = oldStatus;
+        toast.error(error.response?.data?.message || 'Не вдалося змінити статус користувача.');
+    }
+};
+
 onMounted(() => fetchUsers());
 </script>
 
@@ -115,29 +132,58 @@ onMounted(() => fetchUsers());
                         <th class="p-4 pl-6">ID / Ім'я</th>
                         <th class="p-4">Email</th>
                         <th class="p-4">Поточна Роль</th>
+                        <th class="p-4">Статус</th>
                         <th class="p-4">Змінити Роль</th>
                     </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                    <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50 transition-colors">
+                    <tr v-for="user in users" :key="user.id"
+                        :class="{'bg-red-50/50': user.is_blocked, 'hover:bg-gray-50': !user.is_blocked}"
+                        class="transition-colors">
+
                         <td class="p-4 pl-6">
-                            <div class="font-bold text-text">#{{ user.id }}</div>
-                            <div class="font-bold text-primary mt-1">{{ user.name }}</div>
+                            <div class="font-bold" :class="user.is_blocked ? 'text-gray-500' : 'text-text'">#{{
+                                    user.id
+                                }}
+                            </div>
+                            <div class="font-bold mt-1"
+                                 :class="user.is_blocked ? 'text-gray-500 line-through' : 'text-primary'">{{
+                                    user.name
+                                }}
+                            </div>
                         </td>
-                        <td class="p-4 text-gray-600 font-medium">
+
+                        <td class="p-4 font-medium" :class="user.is_blocked ? 'text-gray-400' : 'text-gray-600'">
                             {{ user.email }}
                         </td>
+
                         <td class="p-4">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-wide"
-                      :class="user.role === 'admin' ? 'bg-red-100 text-red-700' : (user.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')">
-                  {{ user.role.toUpperCase() }}
-                </span>
+                            <span
+                                class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-wide"
+                                :class="user.role === 'admin' ? 'bg-red-100 text-red-700' : (user.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')">
+                              {{ user.role.toUpperCase() }}
+                            </span>
                         </td>
+
+                        <td class="p-4">
+                            <button @click="toggleBlock(user)"
+                                    class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none"
+                                    :class="user.is_blocked ? 'bg-red-500' : 'bg-green-500'">
+                                <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform"
+                                      :class="user.is_blocked ? 'translate-x-6' : 'translate-x-1'"></span>
+                            </button>
+                            <span class="ml-2 text-xs font-bold"
+                                  :class="user.is_blocked ? 'text-red-600' : 'text-green-600'">
+                                {{ user.is_blocked ? 'Заблоковано' : 'Активний' }}
+                            </span>
+                        </td>
+
                         <td class="p-4">
                             <select
                                 :value="user.role"
                                 @change="updateRole(user, $event.target.value)"
-                                class="px-3 py-2 rounded-lg border border-secondary focus:ring-2 focus:ring-primary outline-none bg-white font-bold text-sm cursor-pointer">
+                                :disabled="user.is_blocked"
+                                class="px-3 py-2 rounded-lg border border-secondary focus:ring-2 focus:ring-primary outline-none bg-white font-bold text-sm cursor-pointer disabled:opacity-50">
                                 <option value="user">USER (Клієнт)</option>
                                 <option value="manager">MANAGER (Менеджер)</option>
                                 <option value="admin">ADMIN (Адмін)</option>
