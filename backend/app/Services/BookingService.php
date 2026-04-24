@@ -353,16 +353,16 @@ class BookingService
             return;
         }
 
-        $phoneDigits = preg_replace('/\D/', '', $phone);
-        if (!empty($phoneDigits)) {
+        if (!empty($phone)) {
             $phoneBookings = Booking::whereIn('status', ['pending', 'confirmed'])
-                ->whereRaw("REGEXP_REPLACE(guest_phone, '[^0-9]', '') = ?", [$phoneDigits])
+                ->where('guest_phone', $phone)
                 ->count();
 
             if ($phoneBookings >= 2) {
                 throw new ActiveBookingLimitException('З цього номеру телефону вже є 2 активних бронювання. Дочекайтесь їх завершення.');
             }
         }
+
         if ($ipAddress) {
             $ipBookings = Booking::whereIn('status', ['pending', 'confirmed'])
                 ->where('ip_address', $ipAddress)
