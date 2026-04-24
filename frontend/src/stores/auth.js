@@ -69,5 +69,13 @@ export const useAuthStore = defineStore('auth', () => {
             router.push({ name: 'login' });
         }
     };
-    return { user, token, isAuthenticated, isAdmin, isManager, fetchUser, login, logout, register };
+
+    const logoutLocally = () => {
+        user.value = null;
+        token.value = null;
+        localStorage.removeItem('token');
+        delete axios.defaults.headers.common['Authorization'];
+    };
+
+    return { user, token, isAuthenticated, isAdmin, isManager, fetchUser, login, logout, register, logoutLocally };
 });
