@@ -53,4 +53,25 @@ class UserService
             'password' => Hash::make($newPassword)
         ]);
     }
+
+    /**
+     * Toggle the blocked status of a user.
+     */
+    public function toggleBlock(string $id, User $actingUser): User
+    {
+        $user = User::findOrFail($id);
+
+        if ($actingUser->id === $user->id) {
+            throw new \InvalidArgumentException('Ви не можете заблокувати самі себе.');
+        }
+
+        $user->is_blocked = !$user->is_blocked;
+        $user->save();
+
+        if ($user->is_blocked) {
+            $user->tokens()->delete();
+        }
+
+        return $user;
+    }
 }

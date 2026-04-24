@@ -14,6 +14,7 @@ use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\CheckManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\CheckIfBlocked;
 
 Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,60');
@@ -23,9 +24,9 @@ Route::middleware('guest')->group(function () {
 Route::get('/rooms', [RoomController::class, 'index']);
 Route::get('/rooms/{room}', [RoomController::class, 'show']);
 Route::get('/rooms/{room}/reviews', [ReviewController::class, 'index']);
-Route::post('/bookings', [BookingController::class, 'store']);
-Route::post('/bookings/hold', [BookingController::class, 'holdSlot']);
-Route::post('/bookings/release', [BookingController::class, 'releaseSlot']);
+Route::post('/bookings', [BookingController::class, 'store'])->middleware(CheckIfBlocked::class);
+Route::post('/bookings/hold', [BookingController::class, 'holdSlot'])->middleware(CheckIfBlocked::class);
+Route::post('/bookings/release', [BookingController::class, 'releaseSlot'])->middleware(CheckIfBlocked::class);
 Route::post('/bookings/{booking}/pay', [PaymentController::class, 'createCheckoutSession']);
 Route::post('/bookings/{booking}/review', [ReviewController::class, 'storeGuest'])->name('guest.review.store')->middleware('signed');
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);
@@ -34,7 +35,7 @@ Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
 Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail']);
 Route::post('/reset-password', [PasswordResetController::class, 'reset']);
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', CheckIfBlocked::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/user/profile', [UserController::class, 'updateProfile']);
     Route::put('/user/password', [UserController::class, 'updatePassword']);
@@ -65,7 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/users', [UserController::class, 'index']);
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
-
+        Route::patch('/users/{user}/toggle-block', [UserController::class, 'toggleBlock']);
         Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
         Route::patch('/bookings/{booking}/note', [BookingController::class, 'updateNote']);
         Route::get('/admin/stats', [DashboardController::class, 'stats']);

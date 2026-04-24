@@ -68,4 +68,21 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Пароль успішно змінено']);
     }
+
+    /**
+     * Toggle the blocked status of a user.
+     */
+    public function toggleBlock(Request $request, string $id): JsonResponse
+    {
+        try {
+            $user = $this->userService->toggleBlock($id, $request->user());
+
+            return response()->json([
+                'message' => $user->is_blocked ? 'Користувача заблоковано' : 'Користувача розблоковано',
+                'is_blocked' => $user->is_blocked
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 403);
+        }
+    }
 }
