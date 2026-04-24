@@ -275,7 +275,7 @@ onMounted(() => fetchMyBookings());
                             <div v-for="booking in activeBookings" :key="booking.id"
                                  class="bg-white p-4 sm:p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:border-primary transition-colors">
                                 <div class="flex items-center gap-3 sm:gap-4 overflow-hidden w-full sm:w-auto">
-                                    <img v-if="booking.room?.image_path" :src="getFirstImage(booking.room.image_path)"
+                                    <img v-if="booking.room?.image_path" :src="booking.room.first_image_url"
                                          loading="lazy"
                                          decoding="async"
                                          class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover shrink-0"/>
@@ -315,7 +315,7 @@ onMounted(() => fetchMyBookings());
                             <div v-for="booking in pastBookings" :key="booking.id"
                                  class="bg-white p-4 sm:p-5 rounded-2xl border border-secondary flex flex-col sm:flex-row justify-between sm:items-center gap-4 opacity-80 hover:opacity-100 transition-opacity">
                                 <div class="flex items-center gap-3 sm:gap-4 overflow-hidden w-full sm:w-auto">
-                                    <img v-if="booking.room?.image_path" :src="getFirstImage(booking.room.image_path)"
+                                    <img v-if="booking.room?.image_path" :src="booking.room.first_image_url"
                                          loading="lazy"
                                          decoding="async"
                                          class="w-12 h-12 rounded-xl object-cover shrink-0 grayscale"/>
