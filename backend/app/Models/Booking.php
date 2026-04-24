@@ -24,7 +24,8 @@ class Booking extends Model
         'players_count',
         'total_price',
         'status',
-        'admin_note'
+        'admin_note',
+        'ip_address'
     ];
 
     protected $casts = [
