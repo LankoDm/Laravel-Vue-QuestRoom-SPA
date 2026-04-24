@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
@@ -40,6 +41,12 @@ class AuthService
         if (!$user) {
             Hash::check($credentials['password'], '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
             return null;
+        }
+
+        if ($user->is_blocked) {
+            throw ValidationException::withMessages([
+                'email' => ['Ваш акаунт заблоковано адміністратором.']
+            ]);
         }
 
         if (!Hash::check($credentials['password'], $user->password)) {
@@ -114,6 +121,10 @@ class AuthService
                     'google_id' => $googleUser->getId(),
                     'password' => null // OAuth users do not require a standard password
                 ]);
+            }
+
+            if ($user && $user->is_blocked) {
+                throw new Exception('Account is blocked by administrator.');
             }
 
             // Clean up old tokens before creating a new one
