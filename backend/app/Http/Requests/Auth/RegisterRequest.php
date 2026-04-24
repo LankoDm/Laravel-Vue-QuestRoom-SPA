@@ -32,7 +32,7 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name.required' => 'Ім\'я є обов\'язковим.',
-            'name.max' => 'Ім\'я не може перевищувати 255 символів.',
+            'name.max' => 'Ім\'я не може перевищувати 30 символів.',
             'email.required' => 'Email є обов\'язковим.',
             'email.email' => 'Введіть коректну адресу електронної пошти.',
             'email.unique' => 'Користувач з таким email вже зареєстрований.',

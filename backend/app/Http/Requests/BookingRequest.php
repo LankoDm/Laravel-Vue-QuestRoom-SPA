@@ -31,6 +31,7 @@ class BookingRequest extends FormRequest
             'comment' => 'nullable|string',
             'payment_method' => 'required|in:cash,card',
             'total_price' => 'required|integer',
+            'hold_token' => 'required|string',
         ];
     }
     public function messages(): array
@@ -49,6 +50,7 @@ class BookingRequest extends FormRequest
             'guest_email.email' => 'Введіть коректну електронну адресу.',
             'payment_method.required' => 'Оберіть зручний спосіб оплати.',
             'payment_method.in' => 'Обрано недопустимий спосіб оплати.',
+            'hold_token.required' => 'Помилка резервування часу. Будь ласка, оновіть сторінку та спробуйте ще раз.',
         ];
     }
 }
