@@ -224,15 +224,15 @@ onMounted(() => fetchMyBookings());
                         </div>
                     </div>
                     <button @click="openEditProfileModal"
-                            class="w-full cursor-pointer bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
+                            class="w-full cursor-pointer bg-gray-100 mt-4 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
                         Редагувати профіль
                     </button>
                     <button @click="isChangePasswordModalOpen = true"
-                            class="w-full cursor-pointer bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
+                            class="w-full cursor-pointer bg-gray-100 mt-4 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
                         {{ authStore.user.has_password ? 'Змінити пароль' : 'Встановити пароль' }}
                     </button>
                     <button @click="authStore.logout"
-                            class="w-full cursor-pointer mt-6 bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-600 hover:text-white transition-colors">
+                            class="w-full cursor-pointer mt-4 bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-600 hover:text-white transition-colors">
                         Вийти з акаунта
                     </button>
                 </div>

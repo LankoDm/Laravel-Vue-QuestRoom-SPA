@@ -143,7 +143,7 @@ onMounted(() => {
             Завантаження списку бронювань...
         </div>
 
-        <div v-else class="bg-white rounded-3xl shadow-sm border border-secondary overflow-hidden">
+        <div v-else class="bg-white mt-6 rounded-3xl shadow-sm border border-secondary overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>

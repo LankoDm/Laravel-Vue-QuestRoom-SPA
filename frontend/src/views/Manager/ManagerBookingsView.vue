@@ -192,7 +192,7 @@ onMounted(() => {
         </div>
         <div v-if="isLoading" class="py-20 text-center animate-pulse text-gray-400 font-bold">Завантаження</div>
 
-        <div v-else class="bg-white rounded-3xl shadow-sm border border-secondary overflow-hidden">
+        <div v-else class="bg-white mt-6 rounded-3xl shadow-sm border border-secondary overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
                     <thead class="bg-secondary/30 border-b border-secondary text-gray-500 font-bold text-xs uppercase">
