@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Services\ImagePathService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class RoomResource extends JsonResource
 {
@@ -16,13 +16,13 @@ class RoomResource extends JsonResource
     public function toArray(Request $request): array
     {
         $images = is_string($this->image_path) ? json_decode($this->image_path, true) : $this->image_path;
-        $routeUri = $request->route()?->uri();
-        $isRoomsListRequest = $routeUri === 'api/rooms';
+        $isRoomsListRequest = $request->route('room') === null;
+        $imagePathService = app(ImagePathService::class);
 
-        $firstImageUrl = $this->resolveFirstImageUrl($images);
+        $firstImageUrl = $imagePathService->resolveFirstUrl($images);
         $imageUrls = $isRoomsListRequest
             ? array_values(array_filter([$firstImageUrl]))
-            : $this->resolveAllImageUrls($images);
+            : $imagePathService->resolveAllUrls($images);
 
         return [
             'id' => $this->id,
@@ -55,64 +55,5 @@ class RoomResource extends JsonResource
                 });
             }),
         ];
-    }
-
-    /**
-     * Resolve the first valid image URL from room image payload.
-     */
-    private function resolveFirstImageUrl(mixed $images): ?string
-    {
-        if (!is_array($images)) {
-            return null;
-        }
-
-        foreach ($images as $path) {
-            if (!is_string($path) || $path === '') {
-                continue;
-            }
-
-            return $this->resolveImageUrl($path);
-        }
-
-        return null;
-    }
-
-    /**
-     * Resolve all room image URLs.
-     *
-     * @return array<int, string>
-     */
-    private function resolveAllImageUrls(mixed $images): array
-    {
-        if (!is_array($images)) {
-            return [];
-        }
-
-        $urls = [];
-        foreach ($images as $path) {
-            if (!is_string($path) || $path === '') {
-                continue;
-            }
-
-            $urls[] = $this->resolveImageUrl($path);
-        }
-
-        return $urls;
-    }
-
-    /**
-     * Resolve single image path to a browser URL.
-     */
-    private function resolveImageUrl(string $path): string
-    {
-        if (str_starts_with($path, 'http')) {
-            return $path;
-        }
-
-        if (str_starts_with($path, 'questroom/')) {
-            return Storage::disk('cloudinary')->url($path);
-        }
-
-        return asset('storage/' . ltrim($path, '/'));
     }
 }
