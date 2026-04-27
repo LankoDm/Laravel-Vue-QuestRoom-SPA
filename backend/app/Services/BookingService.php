@@ -23,11 +23,14 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Storage;
 
 class BookingService
 {
     private const GUEST_PAYMENT_TOKEN_TTL_MINUTES = 20;
+
+    public function __construct(private readonly ImagePathService $imagePathService)
+    {
+    }
 
     /**
      * Resolve booking list for index endpoint depending on role.
@@ -51,7 +54,8 @@ class BookingService
         $booking = Booking::with(['room'])->findOrFail($id);
 
         if ($booking->relationLoaded('room') && $booking->room) {
-            $firstImageUrl = $this->resolveFirstRoomImageUrl($booking->room->image_path);
+            $images = $this->normalizeRoomImagePayload($booking->room->image_path);
+            $firstImageUrl = $this->imagePathService->resolveFirstUrl($images);
             $booking->room->setAttribute('image_path', $firstImageUrl);
             $booking->room->setAttribute('first_image_url', $firstImageUrl);
         }
@@ -147,15 +151,15 @@ class BookingService
     /**
      * Create a new booking and dispatch events.
      */
-    public function createBooking(array $data, ?int $userId, ?string $ipAddress = null): Booking
+    public function createBooking(array $data, ?int $userId): Booking
     {
-        return DB::transaction(function () use ($data, $userId, $ipAddress) {
+        return DB::transaction(function () use ($data, $userId) {
             $room = Room::lockForUpdate()->findOrFail($data['room_id']);
             $startTime = Carbon::parse($data['start_time']);
             $endTime = $startTime->copy()->addMinutes($room->duration_minutes);
 
             $this->validatePlayersCount($room, $data['players_count']);
-            $this->checkActiveBookingsLimit($userId, $ipAddress, $data['guest_phone']);
+            $this->checkActiveBookingsLimit($userId, $data['guest_phone'], $data['guest_email'] ?? null);
             $this->verifyHoldToken($room->id, $startTime, $data['hold_token']);
             $this->checkTimeConflict($room->id, $startTime, $endTime);
 
@@ -167,7 +171,6 @@ class BookingService
             $booking = Booking::create([
                 'user_id' => $userId,
                 'room_id' => $room->id,
-                'ip_address' => $ipAddress,
                 'start_time' => $startTime,
                 'end_time' => $endTime,
                 'players_count' => $data['players_count'],
@@ -338,39 +341,26 @@ class BookingService
     }
 
     /**
-     * Prevent spam bookings from the same IP address or User.
+     * Prevent spam bookings from the same user/phone.
      */
-    private function checkActiveBookingsLimit(?int $userId, ?string $ipAddress, string $phone): void
+    private function checkActiveBookingsLimit(?int $userId, string $phone, ?string $email): void
     {
-        if ($userId) {
-            $userBookings = Booking::whereIn('status', ['pending', 'confirmed'])
-                ->where('user_id', $userId)
-                ->count();
+        $activeBookingsCount = Booking::whereIn('status', ['pending', 'confirmed'])
+            ->where('start_time', '>=', now())
+            ->where(function ($query) use ($userId, $phone, $email) {
+                $query->where(function($inner) use ($phone, $email) {
+                    $inner->where('guest_phone', $phone);
+                    if (!empty($email)) {
+                        $inner->orWhere('guest_email', $email);
+                    }
+                });
+                if ($userId) {
+                    $query->orWhere('user_id', $userId);
+                }
+            })->count();
 
-            if ($userBookings >= 2) {
-                throw new ActiveBookingLimitException('Ви вже маєте 2 активних бронювання на своєму акаунті. Дочекайтесь їх завершення.');
-            }
-            return;
-        }
-
-        if (!empty($phone)) {
-            $phoneBookings = Booking::whereIn('status', ['pending', 'confirmed'])
-                ->where('guest_phone', $phone)
-                ->count();
-
-            if ($phoneBookings >= 2) {
-                throw new ActiveBookingLimitException('З цього номеру телефону вже є 2 активних бронювання. Дочекайтесь їх завершення.');
-            }
-        }
-
-        if ($ipAddress) {
-            $ipBookings = Booking::whereIn('status', ['pending', 'confirmed'])
-                ->where('ip_address', $ipAddress)
-                ->count();
-
-            if ($ipBookings >= 10) {
-                throw new ActiveBookingLimitException('Забагато запитів з вашої мережі. Будь ласка, увійдіть в акаунт або спробуйте пізніше.');
-            }
+        if ($activeBookingsCount >= 2) {
+            throw new ActiveBookingLimitException('Ви вже маєте 2 активних бронювання. Щоб забронювати більше ігор, зателевонуйте нам.');
         }
     }
 
@@ -430,7 +420,8 @@ class BookingService
     {
         return $bookings->map(function (Booking $booking) {
             if ($booking->relationLoaded('room') && $booking->room) {
-                $firstImageUrl = $this->resolveFirstRoomImageUrl($booking->room->image_path);
+                $images = $this->normalizeRoomImagePayload($booking->room->image_path);
+                $firstImageUrl = $this->imagePathService->resolveFirstUrl($images);
                 $booking->room->setAttribute('image_path', $firstImageUrl);
                 $booking->room->setAttribute('first_image_url', $firstImageUrl);
             }
@@ -440,36 +431,24 @@ class BookingService
     }
 
     /**
-     * Resolve room image field (json string/array/path) to url array.
+     * Normalize room image payload to array for resolver.
      */
-    private function resolveFirstRoomImageUrl(mixed $imagePath): ?string
+    private function normalizeRoomImagePayload(mixed $imagePath): array
     {
-        if (is_string($imagePath) && str_starts_with($imagePath, 'http')) {
+        if (is_array($imagePath)) {
             return $imagePath;
         }
 
-        $images = is_string($imagePath) ? json_decode($imagePath, true) : $imagePath;
-
-        if (!is_array($images)) {
-            return null;
+        if (!is_string($imagePath) || $imagePath === '') {
+            return [];
         }
 
-        foreach ($images as $path) {
-            if (!is_string($path) || $path === '') {
-                continue;
-            }
+        if (str_starts_with($imagePath, '[')) {
+            $decoded = json_decode($imagePath, true);
 
-            if (str_starts_with($path, 'http')) {
-                return $path;
-            }
-
-            if (str_starts_with($path, 'questroom/')) {
-                return Storage::disk('cloudinary')->url($path);
-            }
-
-            return asset('storage/' . ltrim($path, '/'));
+            return is_array($decoded) ? $decoded : [];
         }
 
-        return null;
+        return [$imagePath];
     }
 }
