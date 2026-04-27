@@ -40,16 +40,6 @@ const router = createRouter({
                 {path: 'contacts', name: 'contacts', component: () => import('@/views/Public/ContactView.vue')},
                 {path: 'success', name: 'success', component: () => import('@/views/Public/SuccessView.vue')},
                 {path: 'cancel', name: 'cancel', component: () => import('@/views/Public/CancelView.vue')},
-                {
-                    path: 'privacy-policy',
-                    name: 'privacy-policy',
-                    component: () => import('@/views/Public/PrivacyPolicyView.vue')
-                },
-                {
-                    path: 'public-offer',
-                    name: 'public-offer',
-                    component: () => import('@/views/Public/PublicOfferView.vue')
-                },
                 {path: '404', name: 'not-found', component: () => import('@/views/Public/NotFoundView.vue')},
                 {path: '/:slug', name: 'room.show', component: () => import('../views/Public/RoomView.vue')},
             ]

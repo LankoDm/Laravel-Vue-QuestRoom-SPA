@@ -140,15 +140,11 @@ onMounted(async () => {
           </div>
           <div v-else class="h-4"></div>
         </div>
-        <div class="flex flex-col md:flex-row justify-between items-center gap-6 pt-8 border-t border-secondary">
+        <div class="flex flex-col md:flex-row justify-center items-center gap-6 pt-8 border-t border-secondary">
           <div class="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
             <RouterLink :to="{ name: 'home' }" class="text-xl font-black text-primary tracking-tight">Onea<span class="text-text">Room</span></RouterLink>
             <span class="hidden md:inline text-gray-300">|</span>
             <span class="text-sm text-gray-400 font-medium">© 2026 Чернігів.</span>
-          </div>
-          <div class="flex flex-wrap justify-center gap-6 text-sm font-bold">
-            <RouterLink to="/privacy-policy" class="text-gray-500 hover:text-primary transition-colors">Політика конфіденційності</RouterLink>
-            <RouterLink to="/public-offer" class="text-gray-500 hover:text-primary transition-colors">Договір публічної оферти</RouterLink>
           </div>
         </div>
       </div>
