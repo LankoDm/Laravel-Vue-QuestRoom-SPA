@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\Resources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RoomRequest;
 use App\Http\Resources\RoomResource;
-use App\Models\Room;
 use App\Services\RoomService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

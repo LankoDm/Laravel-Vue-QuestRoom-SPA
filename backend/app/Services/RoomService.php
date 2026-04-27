@@ -15,11 +15,15 @@ class RoomService
      */
     public function findRoomByIdentifier(string $identifier): Room
     {
+        $query = Room::query()->where('slug', $identifier);
+
         if (is_numeric($identifier)) {
-            return Room::findOrFail((int) $identifier);
+            $query->orWhere('id', (int) $identifier);
         }
 
-        return Room::where('slug', $identifier)->firstOrFail();
+        return $query
+            ->orderByRaw('slug = ? DESC', [$identifier])
+            ->firstOrFail();
     }
 
     /**
@@ -215,6 +219,7 @@ class RoomService
                     $query->orWhere('id', (int) $identifier);
                 }
             })
+            ->orderByRaw('slug = ? DESC', [$identifier])
             ->firstOrFail();
     }
 }

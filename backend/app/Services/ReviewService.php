@@ -6,18 +6,21 @@ use App\Models\Review;
 use App\Events\ReviewCreated;
 use App\Exceptions\Review\ReviewAlreadyExistsException;
 use App\Models\Booking;
-use App\Models\Room;
 use App\Models\User;
 use \Illuminate\Http\Request;
 
 class ReviewService
 {
+    public function __construct(private readonly RoomService $roomService)
+    {
+    }
+
     /**
      * Get all approved reviews for a specific room.
      */
     public function getApprovedByRoom(string $roomId, ?int $perPage = null)
     {
-        $room = Room::where('id', $roomId)->orWhere('slug', $roomId)->firstOrFail();
+        $room = $this->roomService->findRoomByIdentifier($roomId);
 
         $query = Review::with('user:id,name')
             ->where('room_id', $room->id)
