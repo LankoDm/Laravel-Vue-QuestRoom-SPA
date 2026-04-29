@@ -18,7 +18,15 @@ export const useAuthStore = defineStore('auth', () => {
             const response = await axios.get('/user');
             user.value = response.data;
         }catch(error){
-            console.error('Помилка відновлення сесії:', error);
+            if (axios.isCancel?.(error) || error?.code === 'ERR_CANCELED') {
+                return;
+            }
+
+            if (!error?.response || ![401, 403].includes(error.response.status)) {
+                console.error('Помилка відновлення сесії:', error);
+                return;
+            }
+
             user.value = null;
             token.value = null;
             localStorage.removeItem('token');
