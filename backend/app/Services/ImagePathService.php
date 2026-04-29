@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Storage;
 
 class ImagePathService
 {
+    private ?string $cloudinaryBaseUrl = null;
+
     /**
      * Resolve the first valid image URL from image payload.
      */
@@ -59,9 +61,46 @@ class ImagePathService
         }
 
         if (str_starts_with($path, 'questroom/')) {
-            return Storage::disk('cloudinary')->url($path);
+            return $this->resolveCloudinaryUrl($path);
         }
 
         return asset('storage/' . ltrim($path, '/'));
+    }
+
+    private function resolveCloudinaryUrl(string $path): string
+    {
+        $baseUrl = $this->getCloudinaryBaseUrl();
+
+        if ($baseUrl === null) {
+            return Storage::disk('cloudinary')->url($path);
+        }
+
+        return $baseUrl . '/' . ltrim($path, '/');
+    }
+
+    private function getCloudinaryBaseUrl(): ?string
+    {
+        if ($this->cloudinaryBaseUrl !== null) {
+            return $this->cloudinaryBaseUrl;
+        }
+
+        $cloudUrl = config('cloudinary.cloud_url') ?? env('CLOUDINARY_URL');
+
+        if (!is_string($cloudUrl) || $cloudUrl === '') {
+            $this->cloudinaryBaseUrl = null;
+            return null;
+        }
+
+        $parts = parse_url($cloudUrl);
+        $cloudName = $parts['host'] ?? null;
+
+        if (!is_string($cloudName) || $cloudName === '') {
+            $this->cloudinaryBaseUrl = null;
+            return null;
+        }
+
+        $this->cloudinaryBaseUrl = 'https://res.cloudinary.com/' . $cloudName . '/image/upload';
+
+        return $this->cloudinaryBaseUrl;
     }
 }
