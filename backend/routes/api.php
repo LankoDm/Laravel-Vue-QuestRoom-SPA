@@ -24,9 +24,9 @@ Route::middleware('guest')->group(function () {
 Route::get('/rooms', [RoomController::class, 'index']);
 Route::get('/rooms/{room}', [RoomController::class, 'show']);
 Route::get('/rooms/{room}/reviews', [ReviewController::class, 'index']);
-Route::post('/bookings', [BookingController::class, 'store'])->middleware(CheckIfBlocked::class);
-Route::post('/bookings/hold', [BookingController::class, 'holdSlot'])->middleware(CheckIfBlocked::class);
-Route::post('/bookings/release', [BookingController::class, 'releaseSlot'])->middleware(CheckIfBlocked::class);
+Route::post('/bookings', [BookingController::class, 'store'])->middleware([CheckIfBlocked::class, 'throttle:10,10']);
+Route::post('/bookings/hold', [BookingController::class, 'holdSlot'])->middleware([CheckIfBlocked::class, 'throttle:10,10']);
+Route::post('/bookings/release', [BookingController::class, 'releaseSlot'])->middleware([CheckIfBlocked::class, 'throttle:10,10']);
 Route::post('/bookings/{booking}/pay', [PaymentController::class, 'createCheckoutSession']);
 Route::post('/bookings/{booking}/review', [ReviewController::class, 'storeGuest'])->name('guest.review.store')->middleware('signed');
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);

@@ -50,8 +50,7 @@ class BookingController extends Controller
 
         $booking = $this->bookingService->createBooking(
             $request->validated(),
-            $request->user()?->id,
-            $request->ip()
+            $userId
         );
 
         $guestPaymentToken = $this->bookingService->issueGuestPaymentToken($booking);
