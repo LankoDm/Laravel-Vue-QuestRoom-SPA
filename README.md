@@ -64,6 +64,7 @@ Required variable:
 
 ```bash
 cd backend
+composer install
 cp .env.example .env
 php artisan key:generate
 ```
@@ -153,6 +154,14 @@ Start the stack:
 
 ```bash
 docker compose up --build
+```
+
+After the first startup, generate Reverb keys inside the backend container and restart the stack:
+
+```bash
+docker compose exec backend php artisan reverb:install
+docker compose down
+docker compose up -d
 ```
 
 After the containers are up, run migrations inside the backend container:
