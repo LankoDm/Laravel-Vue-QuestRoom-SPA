@@ -100,7 +100,7 @@ const handleLogin = async () => {
                 <button
                     type="submit"
                     :disabled="isLoading"
-                    class="w-full bg-primary hover:bg-purple-500 text-white font-bold py-4 rounded-xl transition-all shadow-md disabled:opacity-70 flex justify-center items-center">
+                    class="w-full cursor-pointer bg-primary hover:bg-purple-500 text-white font-bold py-4 rounded-xl transition-all shadow-md disabled:opacity-70 flex justify-center items-center">
                     <span v-if="isLoading">Завантаження...</span>
                     <span v-else>Увійти</span>
                 </button>

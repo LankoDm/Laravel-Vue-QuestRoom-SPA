@@ -119,7 +119,7 @@ const selectSlot = (day, slot) => {
                         v-for="n in (room.max_players - room.min_players + 1)" :key="n"
                         @click="emit('update:players', room.min_players + n - 1)"
                         :class="players === (room.min_players + n - 1) ? 'bg-primary text-white shadow-md transform scale-105 border-primary' : 'bg-transparent border-secondary text-gray-600 hover:border-primary'"
-                        class="w-14 h-14 rounded-2xl border-2 font-black text-lg flex items-center justify-center transition-all duration-200">
+                        class="w-14 h-14 cursor-pointer rounded-2xl border-2 font-black text-lg flex items-center justify-center transition-all duration-200">
                         {{ room.min_players + n - 1 }}
                     </button>
                 </div>
@@ -140,7 +140,7 @@ const selectSlot = (day, slot) => {
                         :disabled="slot.isPast || slot.isBooked"
                         @click="!(slot.isPast || slot.isBooked) && selectSlot(day, slot)"
                         :class="[
-              'flex flex-col items-center justify-center px-4 py-2 rounded-xl border-2 transition-all duration-200 min-w-[80px]',
+              'flex flex-col cursor-pointer items-center justify-center px-4 py-2 rounded-xl border-2 transition-all duration-200 min-w-[80px]',
               (slot.isPast || slot.isBooked)
                 ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
                 : selectedSlot?.date === day.dateStr && selectedSlot?.time === slot.time

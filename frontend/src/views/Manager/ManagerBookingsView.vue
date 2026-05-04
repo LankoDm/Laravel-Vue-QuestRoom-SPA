@@ -123,7 +123,7 @@ onMounted(() => {
                     </svg>
                 </div>
                 <button @click="fetchBookings"
-                        class="p-3 bg-white text-primary shadow-sm border border-secondary hover:bg-secondary rounded-xl transition-colors shrink-0">
+                        class="p-3 cursor-pointer bg-white text-primary shadow-sm border border-secondary hover:bg-secondary rounded-xl transition-colors shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -245,7 +245,7 @@ onMounted(() => {
                             <td class="p-4 text-center">
                                 <div class="flex justify-center gap-2">
                                     <button v-if="b.status === 'pending'" @click="confirmBooking(b.id)"
-                                            class="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
+                                            class="p-2 cursor-pointer bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm"
                                             title="Підтвердити">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -253,7 +253,7 @@ onMounted(() => {
                                         </svg>
                                     </button>
                                     <button v-if="b.status === 'confirmed'" @click="finishBooking(b.id)"
-                                            class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                            class="p-2 cursor-pointer bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                                             title="Позначити як завершене">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -262,7 +262,7 @@ onMounted(() => {
                                     </button>
                                     <button v-if="b.status !== 'cancelled' && b.status !== 'finished'"
                                             @click="cancelBooking(b.id)"
-                                            class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                            class="p-2 cursor-pointer bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
                                             title="Скасувати">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -115,7 +115,7 @@ onMounted(() => fetchUsers());
                         class="w-full px-4 py-3 rounded-xl border border-secondary focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors bg-gray-50">
                 </div>
                 <button type="submit"
-                        class="bg-primary hover:bg-purple-500 text-white px-8 py-3 rounded-xl font-bold shadow-md transition-colors h-[50px]">
+                        class="bg-primary cursor-pointer hover:bg-purple-500 text-white px-8 py-3 rounded-xl font-bold shadow-md transition-colors h-[50px]">
                     Знайти
                 </button>
             </form>
@@ -167,7 +167,7 @@ onMounted(() => fetchUsers());
 
                         <td class="p-4">
                             <button @click="toggleBlock(user)"
-                                    class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none"
+                                    class="relative cursor-pointer inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none"
                                     :class="user.is_blocked ? 'bg-red-500' : 'bg-green-500'">
                                 <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform"
                                       :class="user.is_blocked ? 'translate-x-6' : 'translate-x-1'"></span>

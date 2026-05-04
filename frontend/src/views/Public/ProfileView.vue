@@ -484,7 +484,7 @@ onMounted(() => fetchMyBookings());
                     </div>
                     <div v-if="selectedBooking.ticket_url" class="pt-4 mt-2 border-t border-gray-100">
                         <button @click="downloadTicket(selectedBooking.id)" :disabled="isDownloadingTicket"
-                           class="w-full bg-primary hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all shadow-md flex justify-center items-center gap-2">
+                           class="w-full cursor-pointer bg-primary hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all shadow-md flex justify-center items-center gap-2">
                             <span v-if="isDownloadingTicket" class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></span>
                             <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

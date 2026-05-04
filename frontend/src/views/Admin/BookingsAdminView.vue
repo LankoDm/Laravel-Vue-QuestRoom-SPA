@@ -85,7 +85,7 @@ onMounted(() => {
                     </svg>
                 </div>
                 <button @click="fetchBookings"
-                        class="p-3 bg-white text-primary shadow-sm border border-secondary hover:bg-secondary rounded-xl transition-colors shrink-0">
+                        class="p-3 cursor-pointer bg-white text-primary shadow-sm border border-secondary hover:bg-secondary rounded-xl transition-colors shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -202,7 +202,7 @@ onMounted(() => {
                         </td>
                         <td class="p-4 text-center">
                             <button @click="deleteBooking(booking.id)"
-                                    class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    class="p-2 cursor-pointer text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                     title="Видалити">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

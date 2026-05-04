@@ -146,7 +146,7 @@ const handleTimeout = (msg) => {
 const handleBookingSuccess = () => {
     isModalOpen.value = false;
     selectedSlot.value = null;
-    
+
     sessionStorage.removeItem('questroom_hold_token');
     holdToken.value = sessionStorage.getItem('questroom_hold_token') || Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem('questroom_hold_token', holdToken.value);
@@ -270,7 +270,7 @@ onUnmounted(() => {
                                 </p>
                             </div>
                             <button @click="() => calendarSection.scrollIntoView({ behavior: 'smooth' })"
-                                    class="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-md hover:opacity-90">
+                                    class="w-full cursor-pointer bg-primary text-white font-bold py-4 rounded-xl shadow-md hover:opacity-90">
                                 Вибрати час
                             </button>
                         </div>

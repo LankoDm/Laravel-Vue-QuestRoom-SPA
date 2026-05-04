@@ -155,7 +155,7 @@ onUnmounted(() => {
         <div class="flex flex-col items-center gap-6 relative z-10 w-full max-w-xl mx-auto">
             <div v-if="gameStage === 0" class="py-6">
                 <button @click="startMiniGame"
-                        class="bg-primary hover:bg-purple-600 text-white font-black uppercase tracking-widest py-4 px-12 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-1">
+                        class="bg-primary cursor-pointer hover:bg-purple-600 text-white font-black uppercase tracking-widest py-4 px-12 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-1">
                     Розблокувати
                 </button>
             </div>
@@ -181,7 +181,7 @@ onUnmounted(() => {
                     <div v-if="successHit" class="absolute inset-0 bg-green-50 animate-pulse"></div>
                 </div>
                 <button @click="tryHack"
-                        class="w-full bg-primary hover:bg-purple-600 text-white font-black text-xl tracking-widest py-5 rounded-xl transition-all active:scale-95 shadow-md">
+                        class="w-full cursor-pointer bg-primary hover:bg-purple-600 text-white font-black text-xl tracking-widest py-5 rounded-xl transition-all active:scale-95 shadow-md">
                     ЗУПИНИТИ
                 </button>
             </div>

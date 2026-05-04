@@ -307,7 +307,7 @@ onMounted(() => fetchRoom());
             </div>
             <div class="flex justify-end pt-4">
                 <button type="submit" :disabled="isSaving"
-                        class="bg-primary hover:bg-purple-500 text-white px-10 py-4 rounded-xl font-bold shadow-lg transition-colors disabled:opacity-70 text-lg">
+                        class="bg-primary cursor-pointer hover:bg-purple-500 text-white px-10 py-4 rounded-xl font-bold shadow-lg transition-colors disabled:opacity-70 text-lg">
                     {{ isSaving ? 'Збереження' : (isEditMode ? 'Зберегти зміни' : 'Створити кімнату') }}
                 </button>
             </div>
