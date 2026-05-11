@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Resources;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReviewRequest;
+use App\Models\Booking;
 use App\Services\ReviewService;
 use Illuminate\Http\JsonResponse;
 use \Illuminate\Http\Request;
@@ -47,13 +48,20 @@ class ReviewController extends Controller
     /**
      * Store a guest review via signed token.
      */
-    public function storeGuest(ReviewRequest $request, \App\Models\Booking $booking): JsonResponse
+    public function storeGuest(ReviewRequest $request, string $booking): JsonResponse
     {
         if (!$request->hasValidSignature()) {
             abort(403, 'Посилання недійсне або його термін дії минув.');
         }
 
-        $review = $this->reviewService->createGuestReview($request->validated(), $booking);
+        $bookingModel = Booking::find($booking);
+        if (!$bookingModel) {
+            return response()->json([
+                'message' => 'Бронювання не знайдено або посилання застаріло.'
+            ], 404);
+        }
+
+        $review = $this->reviewService->createGuestReview($request->validated(), $bookingModel);
 
         return response()->json([
             'message' => 'Дякуємо за ваш відгук! Він з\'явиться на сайті після схвалення.',
