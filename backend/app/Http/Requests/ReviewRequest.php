@@ -20,9 +20,10 @@ class ReviewRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if ($booking = $this->route('booking')) {
+        $booking = $this->route('booking');
+        if ($booking instanceof Booking) {
             $this->merge([
-                'room_id' => $booking->room_id ?? (int) Booking::find($booking)?->room_id
+                'room_id' => $booking->room_id
             ]);
         }
     }
@@ -34,6 +35,13 @@ class ReviewRequest extends FormRequest
      */
     public function rules(): array
     {
+        if ($this->route('booking')) {
+            return [
+                'message' => 'required|string|min:2',
+                'rating' => 'nullable|integer|min:1|max:5',
+            ];
+        }
+
         return [
             'room_id' => 'required|exists:rooms,id',
             'message' => 'required|string|min:2',
