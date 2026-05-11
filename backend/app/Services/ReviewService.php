@@ -81,17 +81,28 @@ class ReviewService
      */
     public function createGuestReview(array $data, Booking $booking): Review
     {
-        $guestName = $booking->guest_name;
-
         $alreadyReviewed = Review::where('booking_id', $booking->id)->exists();
 
         if ($alreadyReviewed) {
             throw new ReviewAlreadyExistsException('Ви вже залишили свій відгук. Дякуємо!');
         }
 
+        $reviewUserId = $booking->user_id;
+        if ($reviewUserId) {
+            $alreadyReviewedByUser = Review::where('user_id', $reviewUserId)
+                ->where('room_id', $booking->room_id)
+                ->exists();
+
+            if ($alreadyReviewedByUser) {
+                throw new ReviewAlreadyExistsException('Ви вже залишали відгук на цю кімнату.');
+            }
+        }
+
+        $guestName = $reviewUserId ? null : $booking->guest_name;
+
         $review = Review::create([
             'booking_id' => $booking->id,
-            'user_id' => null,
+            'user_id' => $reviewUserId,
             'guest_name' => $guestName,
             'room_id' => $booking->room_id,
             'message' => $data['message'],
