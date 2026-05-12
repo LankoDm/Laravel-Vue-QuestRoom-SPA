@@ -48,7 +48,12 @@ const submitReview = async () => {
         rating.value = 5;
         message.value = '';
     } catch (error) {
-        const msg = error.response?.data?.message || 'Помилка при відправці відгуку. Можливо, посилання застаріло.';
+        let msg = error.response?.data?.message || 'Помилка при відправці відгуку. Можливо, посилання застаріло.';
+        if (error.response?.status === 403) {
+            msg = 'Посилання недійсне або його термін дії минув.';
+        } else if (error.response?.status === 429) {
+            msg = 'Забагато спроб. Спробуйте пізніше.';
+        }
         toast.error(msg);
         emit('close');
     } finally {
