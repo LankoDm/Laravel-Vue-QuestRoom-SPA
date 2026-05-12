@@ -158,8 +158,8 @@ onMounted(() => {
                     </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                    <tr v-for="booking in bookings" :key="booking.id"
-                        class="hover:bg-gray-50 transition-colors">
+                    <template v-for="booking in bookings" :key="booking.id">
+                    <tr class="hover:bg-gray-50 transition-colors">
                         <td class="p-4 pl-6">
                             <div class="font-bold text-text">#{{ booking.id }}</div>
                             <div class="text-sm text-primary font-bold mt-1">{{
@@ -211,6 +211,23 @@ onMounted(() => {
                             </button>
                         </td>
                     </tr>
+                    <tr v-if="booking.comment" class="bg-yellow-50/50">
+                        <td colspan="7" class="p-3 pl-6 border-t border-dashed border-yellow-200">
+                            <div class="flex items-start gap-2 text-sm text-gray-700">
+                                <svg class="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" fill="none"
+                                     stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                </svg>
+                                <div>
+                                    <span
+                                        class="font-bold text-yellow-700 uppercase text-[10px] tracking-wider mr-2">Коментар клієнта:</span>
+                                    <span class="italic text-yellow-800">"{{ booking.comment }}"</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    </template>
                     </tbody>
                 </table>
             </div>
