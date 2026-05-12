@@ -104,7 +104,11 @@ const startBookingProcess = async () => {
         });
         isModalOpen.value = true;
     } catch (error) {
-        toast.info(error.response?.data?.message || 'Помилка. Оберіть інший час.');
+        if (error.response?.status === 429) {
+            toast.info('Забагато спроб. Спробуйте пізніше.');
+        } else {
+            toast.info(error.response?.data?.message || 'Помилка. Оберіть інший час.');
+        }
         selectedSlot.value = null;
     } finally {
         isHoldSubmitting.value = false;
@@ -241,11 +245,12 @@ onUnmounted(() => {
                             </div>
                             <p class="text-sm text-gray-500">До сплати</p>
                             <p class="text-4xl font-black text-text mb-8">{{ currentPriceKopecks / 100 }} ₴</p>
-                            <button @click="startBookingProcess" :disabled="isHoldSubmitting"
-                                    class="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg hover:bg-purple-500 disabled:opacity-70 transition">
+                                        <button @click="startBookingProcess" :disabled="isHoldSubmitting"
+                                            class="w-full cursor-pointer bg-primary text-white font-black py-4 rounded-2xl border-2 border-primary shadow-[0_12px_28px_-18px_rgba(0,0,0,0.35)] hover:bg-white hover:text-primary hover:shadow-[0_16px_32px_-18px_rgba(0,0,0,0.4)] active:translate-y-[1px] disabled:opacity-60 disabled:cursor-not-allowed transition">
                                 {{ isHoldSubmitting ? 'Перевірка часу...' : 'Перейти до бронювання' }}
                             </button>
-                            <button @click="selectedSlot = null" class="mt-4 text-sm text-gray-400 hover:text-primary">
+                                <button @click="selectedSlot = null"
+                                    class="mt-4 text-sm text-gray-400 hover:text-primary cursor-pointer">
                                 Обрати інший час
                             </button>
                         </div>
@@ -269,8 +274,8 @@ onUnmounted(() => {
                                         class="font-bold text-primary">200 ₴</span></span>
                                 </p>
                             </div>
-                            <button @click="() => calendarSection.scrollIntoView({ behavior: 'smooth' })"
-                                    class="w-full cursor-pointer bg-primary text-white font-bold py-4 rounded-xl shadow-md hover:opacity-90">
+                                    <button @click="() => calendarSection.scrollIntoView({ behavior: 'smooth' })"
+                                        class="w-full cursor-pointer bg-white text-primary font-black py-4 rounded-2xl border-2 border-primary shadow-[0_12px_28px_-18px_rgba(0,0,0,0.35)] hover:bg-primary hover:text-white hover:shadow-[0_16px_32px_-16px_rgba(88,79,255,0.35)] active:translate-y-[1px] transition">
                                 Вибрати час
                             </button>
                         </div>

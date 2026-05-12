@@ -102,6 +102,9 @@ const submitBooking = async () => {
         emit('success');
     } catch (error) {
         if (error.response?.status === 409) emit('timeout', error.response.data.message);
+        else if (error.response?.status === 429) {
+            errorMessage.value = 'Забагато спроб. Спробуйте пізніше.';
+        }
         else if (error.response?.status === 422 && error.response.data.errors) {
             validationErrors.value = error.response.data.errors;
             errorMessage.value = 'Будь ласка, перевірте правильність заповнення форми.';
@@ -213,7 +216,7 @@ onUnmounted(() => clearInterval(timerInterval.value));
                         </div>
 
                         <button type="submit" :disabled="isSubmitting"
-                                class="mt-auto w-full bg-primary text-white font-black py-4 rounded-xl shadow-lg disabled:opacity-70">
+                            class="mt-auto w-full cursor-pointer bg-primary text-white font-black py-4 rounded-xl border-2 border-primary shadow-lg hover:bg-white hover:text-primary hover:shadow-xl active:translate-y-[1px] disabled:opacity-70 disabled:cursor-not-allowed transition">
                             <span v-if="isSubmitting">Відправка...</span>
                             <span v-else>Підтвердити бронювання</span>
                         </button>
