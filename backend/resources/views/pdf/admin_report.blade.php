@@ -19,7 +19,7 @@
     </style>
 </head>
 <body>
-<h1>Аналітичний звіт OneaRoom</h1>
+<h1>Аналітичний звіт OneaQuest</h1>
 <p>Дата формування: <strong>{{ $date }}</strong></p>
 
 <div class="box">

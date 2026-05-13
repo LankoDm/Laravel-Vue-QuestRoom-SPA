@@ -35,7 +35,7 @@ onMounted(async () => {
       <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
 
         <RouterLink :to="{ name: 'home' }" class="text-2xl font-black text-primary tracking-tight">
-          Onea<span class="text-text">Room</span>
+          Onea<span class="text-text">Quest</span>
         </RouterLink>
         <nav class="hidden md:flex space-x-8 font-semibold text-gray-500">
           <RouterLink
@@ -142,7 +142,7 @@ onMounted(async () => {
         </div>
         <div class="flex flex-col md:flex-row justify-center items-center gap-6 pt-8 border-t border-secondary">
           <div class="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left">
-            <RouterLink :to="{ name: 'home' }" class="text-xl font-black text-primary tracking-tight">Onea<span class="text-text">Room</span></RouterLink>
+            <RouterLink :to="{ name: 'home' }" class="text-xl font-black text-primary tracking-tight">Onea<span class="text-text">Quest</span></RouterLink>
             <span class="hidden md:inline text-gray-300">|</span>
             <span class="text-sm text-gray-400 font-medium">© 2026 Чернігів.</span>
           </div>

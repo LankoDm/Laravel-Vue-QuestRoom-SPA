@@ -44,7 +44,7 @@ const downloadPdf = async () => {
 
         const now = new Date();
         const timestamp = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
-        const fileName = `OneaRoom_Analytics_${timestamp}.pdf`;
+        const fileName = `OneaQuest_Analytics_${timestamp}.pdf`;
 
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');

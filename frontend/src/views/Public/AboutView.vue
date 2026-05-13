@@ -3,7 +3,7 @@
     <div class="text-center mb-16">
       <h1 class="text-5xl font-black text-text mb-6">Хто ми такі?</h1>
       <p class="text-xl text-gray-500 font-medium max-w-2xl mx-auto">
-          OneaRoom - це команда фанатів своєї справи з Чернігова. Ми створюємо не просто кімнати із загадками, а цілі світи, в які ви можете зануритися з головою, не виїжджаючи з рідного міста.
+          OneaQuest - це команда фанатів своєї справи з Чернігова. Ми створюємо не просто кімнати із загадками, а цілі світи, в які ви можете зануритися з головою, не виїжджаючи з рідного міста.
       </p>
     </div>
     <div class="bg-secondary/20 p-8 md:p-12 rounded-3xl border border-secondary mb-20">

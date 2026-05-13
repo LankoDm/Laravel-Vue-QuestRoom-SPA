@@ -27,7 +27,7 @@
             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
           </div>
           <h3 class="font-black text-xl mb-2 text-text">Електронна пошта</h3>
-          <p class="text-gray-500 font-medium">hello@questroom.cn.ua<br>Для співпраці та пропозицій</p>
+          <p class="text-gray-500 font-medium">hello@oneaquest.cn.ua<br>Для співпраці та пропозицій</p>
         </div>
       </div>
       <div class="lg:col-span-2 bg-gray-100 rounded-3xl overflow-hidden shadow-sm border border-secondary relative h-[400px] lg:h-auto">
